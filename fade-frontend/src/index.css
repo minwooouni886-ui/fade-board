@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base rules ported from the Stitch design spec */
+@layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    overscroll-behavior: none;
+  }
+  main > :first-child {
+    margin-top: 0 !important;
+  }
+  main > :last-child {
+    margin-bottom: 0 !important;
+  }
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbars on horizontally scrolling pill rows (Stitch: .no-scrollbar) */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+  line-height: 1;
+  user-select: none;
+}
+
+/* fade logo — ambient staggered decay of the bars */
+.fade-logo .flb-1 {
+  animation: fade-logo-b1 4.6s ease-in-out infinite;
+}
+.fade-logo .flb-2 {
+  animation: fade-logo-b2 4.6s ease-in-out 0.5s infinite;
+}
+.fade-logo .flb-3 {
+  animation: fade-logo-b3 4.6s ease-in-out 1s infinite;
+}
+.fade-logo .fld {
+  animation: fade-logo-dot 4.6s ease-in-out 1.4s infinite;
+}
+@keyframes fade-logo-b1 {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 0.5;
+  }
+}
+@keyframes fade-logo-b2 {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 0.38;
+  }
+}
+@keyframes fade-logo-b3 {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  55% {
+    opacity: 0.12;
+  }
+}
+@keyframes fade-logo-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 0.25;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fade-logo .flb-1,
+  .fade-logo .flb-2,
+  .fade-logo .flb-3,
+  .fade-logo .fld {
+    animation: none;
+  }
+}
+
+/* Spark-burst mark (Spark a Fresh Community Board tile) */
+.spark-burst {
+  animation: spark-pulse 3.8s ease-in-out infinite;
+  transform-origin: center;
+}
+.spark-burst .sb-orbit {
+  transform-origin: 24px 24px;
+  animation: spark-orbit 16s linear infinite;
+}
+.spark-burst .sb-twinkle {
+  transform-origin: 38px 11px;
+  animation: spark-twinkle 2.6s ease-in-out infinite;
+}
+@keyframes spark-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+@keyframes spark-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes spark-twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spark-burst,
+  .spark-burst .sb-orbit,
+  .spark-burst .sb-twinkle {
+    animation: none;
+  }
+}
