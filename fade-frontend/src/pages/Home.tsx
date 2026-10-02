@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Icon from '../components/Icon'
 import CommunityCard from '../components/CommunityCard'
 import { fetchCommunities, type ApiCommunity } from '../api'
+import CreateCommunityModal from '../components/CreateCommunityModal'
 
 type SortKey = 'nearest' | 'newest'
 
@@ -12,6 +13,7 @@ const sortOptions: { key: SortKey; label: string; icon: string }[] = [
 
 export default function Home() {
   const [communities, setCommunities] = useState<ApiCommunity[]>([])
+  const [modalView, setModalView] = useState(false)
 
   useEffect( () => {
     fetchCommunities().then(communityList => {
@@ -41,8 +43,8 @@ export default function Home() {
         </p>
       </div>
 
-      {/* Sort controls */}
-      <div className="mb-8 flex">
+      {/* Sort controls + New Community button */}
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-space-md">
         <div className="flex items-center gap-1.5 bg-surface-container-low rounded-full p-1">
           <span className="pl-space-sm pr-1 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider hidden sm:inline">
             Sort
@@ -70,8 +72,21 @@ export default function Home() {
             )
           })}
         </div>
+        
+        {/* new community button modal */}
+        <button
+          type="button"
+          onClick={() => setModalView(true)}
+          className="flex items-center gap-space-xs px-space-lg py-space-xs rounded-full font-label-md text-label-md font-bold bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary transition-colors shadow-sm"
+        >
+          <Icon name="add" className="text-base" />
+          New Community
+        </button>
       </div>
-
+      {modalView && <CreateCommunityModal 
+        onClose={() => setModalView(false)} 
+        onCreated={() => fetchCommunities().then(updated => setCommunities(updated))}
+      />}
       {/* Board grid — fixed-size cards, left-aligned, never full-bleed */}
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(320px,360px))]">
         {sortedCommunities.map((community) => (

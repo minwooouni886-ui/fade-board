@@ -22,6 +22,20 @@ async function apiFetch<T>(path: string): Promise<T> {
   return res.json()
 }
 
+// for creating posts and communities
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`/api${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const data = await res.json()
+    throw new Error(data.error)
+  }
+  return res.json()
+}
+
 export function fetchCommunities() {
   return apiFetch<ApiCommunity[]>('/communities')
 }
@@ -29,3 +43,9 @@ export function fetchCommunities() {
 export function fetchCommunityPosts(communityId: string | number) {
   return apiFetch<ApiPost[]>(`/communities/${communityId}/posts`)
 }
+
+export function createCommunity(name: string, description: string | null, location: string | null) {
+  return apiPost<ApiCommunity[]>('/communities', {name, description, location})
+}
+
+export function createPost() {}
