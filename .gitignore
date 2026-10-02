@@ -144,3 +144,6 @@ vite.config.ts.timestamp-*
 
 # Claude Code local config
 .claude/
+
+# VS Code workspace files (personal editor setup)
+*.code-workspace
