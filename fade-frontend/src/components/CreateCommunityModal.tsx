@@ -17,10 +17,21 @@ export default function CreateCommunityModal({ onClose, onCreated }: { onClose: 
     e.preventDefault()
     setSubmitting(true)
 
-    if (name.length === 0) {
+    if (name.trim().length === 0) {
       setError("Community name must be present!")
+      setSubmitting(false)
+      return
     }
-    await createCommunity(name, description, location)
+
+    try {
+      await createCommunity(name, description, location)
+    } catch (error) {
+      console.log(error)
+      setError( error instanceof Error ? error.message : 'Something went wrong')
+      setSubmitting(false)
+      return
+    }
+    
     onCreated()
     onClose()
     setSubmitting(false)
