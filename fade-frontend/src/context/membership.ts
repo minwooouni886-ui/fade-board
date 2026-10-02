@@ -3,8 +3,6 @@ import { createContext, useContext } from 'react'
 export type MembershipValue = {
   isJoined: (communityId: number) => boolean
   toggle: (communityId: number) => void
-  /** total members for a board, including the current user if they've joined */
-  memberCount: (community: { id: number; members: number }) => number
 }
 
 export const MembershipContext = createContext<MembershipValue | null>(null)
