@@ -105,7 +105,7 @@ search endpoint (or client-side filtering of loaded communities/posts).
   went nowhere). The feed is now a single column (`max-w-3xl`).
 
 ## 10. Member avatars on community cards (`components/CommunityCard.tsx`)
-Row of 2–3 stock faces (pravatar.cc) plus a "+42" overflow bubble, from the
+Row of 2â€“3 stock faces (pravatar.cc) plus a "+42" overflow bubble, from the
 `avatars` / `overflowCount` mock fields. There's no account system, so they
 were fake. To bring back: once users exist, have the backend return a few
 member avatars and the total member count per community.
@@ -135,7 +135,13 @@ loading/error states like `Community.tsx`). Note the mock still has two fields
 the backend doesn't (`image`, `distanceLabel`), so `CommunityCard` will need
 adjusting too. `distanceLabel` is for when PostGIS is in.
 
-## Still present
-- "Join Board" / membership (`useMembership`) works as local-only React
-  state (`MembershipProvider.tsx`), not persisted to any backend. It doesn't
-  survive a refresh.
+## 13. Join Board / membership (`context/`, deleted)
+`MembershipProvider.tsx` + `membership.ts` held a `Set` of joined board IDs
+in React Context. "Join Board" on a community card had to be clicked before
+"Enter Board" appeared, and the board page had a Join/Joined button. It was
+browser-memory only (lost on refresh) and there are no user accounts, so it
+was removed. Cards now always show "Enter Board".
+
+To bring back for real: needs user accounts first, then a `memberships`
+table (user_id, community_id) with join/leave endpoints. The frontend can
+then fetch the user's memberships and show Join/Leave again.

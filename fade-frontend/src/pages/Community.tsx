@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import Icon from '../components/Icon'
 import SparkCard from '../components/SparkCard'
-import { useMembership } from '../context/membership'
 import { fetchCommunities, fetchCommunityPosts, type ApiCommunity, type ApiPost } from '../api'
 
 export default function Community() {
@@ -10,7 +9,6 @@ export default function Community() {
   const [community, setCommunity] = useState<ApiCommunity | null>(null)
   const [posts, setPosts] = useState<ApiPost[]>([])
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
-  const { isJoined, toggle } = useMembership()
 
   // Load the board and its posts from the backend when the page opens
   useEffect(() => {
@@ -35,8 +33,6 @@ export default function Community() {
     return <p className="py-16 text-center font-body-md text-body-md text-on-surface-variant">{message}</p>
   }
 
-  const joined = isJoined(community.id)
-
   return (
     <div className="flex flex-col w-full pb-16 pt-gutter">
       <title>{`Fade · ${community.name}`}</title>
@@ -49,15 +45,6 @@ export default function Community() {
           <Icon name="schedule" className="text-sm text-tertiary" />
           {posts.length} live Sparks · every Spark fades within 7 days
         </p>
-        <button
-          type="button"
-          onClick={() => toggle(community.id)}
-          className={`self-start mt-space-sm px-space-lg py-space-xs rounded-full font-label-md text-label-md font-bold ${
-            joined ? 'bg-secondary-container text-on-secondary-container' : 'bg-primary-container text-on-primary-container'
-          }`}
-        >
-          {joined ? 'Joined' : 'Join Board'}
-        </button>
       </div>
 
       {/* Feed */}
