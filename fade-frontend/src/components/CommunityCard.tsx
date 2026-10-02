@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
 import Icon from './Icon'
-import type { Community } from '../data/mock'
+import type { ApiCommunity } from '../api'
 
-export default function CommunityCard({ community }: { community: Community }) {
+export default function CommunityCard({ community }: { community: ApiCommunity }) {
   return (
     <div className="group relative flex flex-col bg-surface-container-low rounded-xl p-space-lg transition-all duration-200 hover:-translate-y-1 shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
       <div className="flex flex-col gap-space-xs">
@@ -16,15 +16,10 @@ export default function CommunityCard({ community }: { community: Community }) {
 
       {/* Visual preview */}
       <div className="relative my-space-md h-32 w-full rounded-lg overflow-hidden bg-surface-container-highest">
-        <img
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          src={community.image}
-          alt=""
-        />
         <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/80 via-transparent to-transparent" />
         <div className="absolute bottom-2 left-2 flex items-center gap-1.5 text-on-surface font-label-sm text-label-sm bg-surface-container-lowest/90 px-2 py-0.5 rounded-full">
           <Icon name="location_on" className="text-xs text-primary-container" />
-          <span>{community.distanceLabel}</span>
+          <span>{community.location}</span>
         </div>
       </div>
 

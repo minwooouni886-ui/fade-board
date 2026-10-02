@@ -1,21 +1,29 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Icon from '../components/Icon'
 import CommunityCard from '../components/CommunityCard'
-import { communities } from '../data/mock'
+import { fetchCommunities, type ApiCommunity } from '../api'
 
 type SortKey = 'nearest' | 'newest'
 
 const sortOptions: { key: SortKey; label: string; icon: string }[] = [
-  { key: 'nearest', label: 'Nearest', icon: 'near_me' },
-  { key: 'newest', label: 'Newest', icon: 'schedule' },
+  // { key: 'nearest', label: 'Nearest', icon: 'near_me' }, Will add when PostGIS is added
+  { key: 'newest', label: 'Newest', icon: 'schedule' }
 ]
 
 export default function Home() {
-  const [sort, setSort] = useState<SortKey>('nearest')
+  const [communities, setCommunities] = useState<ApiCommunity[]>([])
+
+  useEffect( () => {
+    fetchCommunities().then(communityList => {
+      setCommunities(communityList)
+    })
+  }, [])
+
+  const [sort, setSort] = useState<SortKey>('newest')
 
   // Copy the list (sort() changes the array it's called on), then sort it
   const sortedCommunities = [...communities].sort((a, b) => {
-    if (sort === 'nearest') return parseFloat(a.distanceLabel) - parseFloat(b.distanceLabel)
+    // if (sort === 'nearest') return parseFloat(a.distanceLabel) - parseFloat(b.distanceLabel)
     return b.id - a.id // newest first
   })
 
