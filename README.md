@@ -60,6 +60,7 @@ npm install --prefix fade-frontend
 Create a database called `fade`, then run the migrations in `fade-backend/db/migrations` in order:
 
 ```bash
+psql -U postgres -d fade -f fade-backend/db/migrations/000_create_tables.sql
 psql -U postgres -d fade -f fade-backend/db/migrations/001_add_postgis.sql
 ```
 
