@@ -1,4 +1,3 @@
-import db from '../db.js'
 import { Router } from 'express'
 import geocode from '../geocode.js'
 
@@ -13,6 +12,7 @@ router.get('/geocode', async (req, res) => {
         const locationList = await geocode(req.query.q)
         return res.status(200).json(locationList)
     } catch (e) {
+        console.error(e)
         return res.status(502).json({ error: "Location service unavailable"})
     }
 })
