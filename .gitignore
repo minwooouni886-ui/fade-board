@@ -147,3 +147,6 @@ vite.config.ts.timestamp-*
 
 # VS Code workspace files (personal editor setup)
 *.code-workspace
+
+# Vitest
+.vitest/
