@@ -1,4 +1,3 @@
-import Icon from './Icon'
 import type { ApiPost } from '../api'
 
 const SPARK_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
@@ -22,45 +21,35 @@ export default function SparkCard({ post }: { post: ApiPost }) {
   const { label, urgent, decay } = timeRemaining(post.expires_at)
 
   return (
-    <article className="relative flex flex-col bg-surface-container-low rounded-2xl p-space-xl shadow-md transition-transform hover:-translate-y-0.5 overflow-hidden">
-      {/* Ambient decay bar strip */}
-      <div className="absolute top-0 left-0 right-0 h-1.5 bg-surface-container-highest overflow-hidden">
-        <div
-          className={`h-full relative ${urgent ? 'bg-primary-container' : 'bg-secondary'}`}
-          style={{ width: `${Math.round(decay * 100)}%` }}
-        >
-          {urgent && <span className="absolute inset-0 bg-primary animate-pulse opacity-75" />}
-        </div>
-      </div>
-
-      {/* Header — category on the left, countdown badge on the right */}
-      <div className="flex items-center gap-space-md mb-space-md">
-        {post.category && (
-          <span className="font-body-sm text-body-sm text-on-surface-variant truncate">
-            {post.category}
-          </span>
-        )}
-
-        <div
-          className={`ml-auto flex items-center gap-1.5 px-space-md py-1 rounded-full shrink-0 ${
-            urgent
-              ? 'bg-error-container/40 text-error shadow-sm'
-              : 'bg-secondary-container/30 text-secondary'
-          } ${urgent ? 'animate-pulse' : ''}`}
-        >
-          <Icon name={urgent ? 'alarm' : 'schedule'} className="text-sm" />
-          <span className="font-label-sm text-label-sm font-bold tracking-wider">{label}</span>
-        </div>
+    // The whole card fades as the Spark nears expiry
+    <article
+      className="flex flex-col rounded-[20px] bg-surface-container-low p-space-lg pb-space-md"
+      style={{ opacity: 0.6 + 0.4 * decay }}
+    >
+      {/* Header — category on the left, time left on the right */}
+      <div className="flex items-baseline justify-between gap-space-md font-body-sm text-body-sm">
+        <span className="truncate text-outline">{post.category}</span>
+        <span className={`shrink-0 tabular-nums ${urgent ? 'text-error' : 'text-outline'}`}>
+          {label}
+        </span>
       </div>
 
       {/* Title & body */}
-      <div className="flex flex-col gap-space-xs">
-        <h3 className="font-headline-md text-headline-md text-on-surface font-bold">{post.title}</h3>
+      <div className="mt-space-sm flex flex-col gap-space-xs">
+        <h3 className="font-headline-sm text-headline-sm font-medium tracking-[-0.01em] text-on-surface">
+          {post.title}
+        </h3>
         {post.description && (
-          <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
-            {post.description}
-          </p>
+          <p className="font-body-md text-body-md text-on-surface-variant">{post.description}</p>
         )}
+      </div>
+
+      {/* Decay line */}
+      <div className="mt-space-lg h-[3px] overflow-hidden rounded-full bg-black/[0.07]">
+        <div
+          className="h-full rounded-full bg-primary-container"
+          style={{ width: `${Math.max(2, Math.round(decay * 100))}%` }}
+        />
       </div>
     </article>
   )

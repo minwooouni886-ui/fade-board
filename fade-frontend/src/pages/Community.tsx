@@ -34,23 +34,23 @@ export default function Community() {
   }
 
   return (
-    <div className="flex flex-col w-full pb-16 pt-gutter">
+    <div className="flex flex-col w-full pb-16 pt-12">
       <title>{`Fade · ${community.name}`}</title>
 
       {/* Board header */}
-      <div className="flex flex-col gap-space-xs rounded-2xl bg-surface-container-low p-space-xl mb-gutter">
-        <h1 className="font-headline-md text-headline-md text-on-surface font-bold">{community.name}</h1>
-        <p className="font-body-md text-body-md text-on-surface-variant">{community.description}</p>
-        <p className="flex items-center gap-space-xs mt-space-xs font-label-sm text-label-sm text-on-surface-variant">
-          <Icon name="schedule" className="text-sm text-tertiary" />
+      <div className="flex flex-col gap-space-xs mb-space-xl max-w-3xl">
+        <h1 className="font-headline-lg text-headline-lg text-on-surface">{community.name}</h1>
+        <p className="font-body-lg text-body-lg text-on-surface-variant">{community.description}</p>
+        <p className="flex items-center gap-space-xs mt-space-xs font-body-sm text-body-sm text-outline">
+          <Icon name="schedule" className="text-base" />
           {posts.length} live Sparks · every Spark fades within 7 days
         </p>
       </div>
 
       {/* Feed */}
-      <div className="flex flex-col gap-gutter max-w-3xl">
+      <div className="flex flex-col gap-space-md max-w-3xl">
         {posts.length === 0 && (
-          <p className="p-space-lg rounded-2xl bg-surface-container-low text-center text-on-surface-variant font-body-md text-body-md">
+          <p className="p-space-xl rounded-[20px] bg-surface-container-low text-center text-on-surface-variant font-body-md text-body-md">
             No active Sparks in this board right now.
           </p>
         )}
