@@ -12,6 +12,7 @@ Local community boards where nothing lasts. People create boards for their neigh
 | Backend | Node.js, Express 5, `pg` (node-postgres) |
 | Database | PostgreSQL 18 with PostGIS |
 | Geocoding | [Nominatim](https://nominatim.org/) (OpenStreetMap) |
+| Testing | Vitest, Supertest (backend API tests) |
 
 ## Features
 
@@ -29,10 +30,12 @@ fade-board/
 ├── fade-backend/
 │   ├── db/migrations/    # SQL migrations, run in order
 │   └── src/
-│       ├── index.js      # Express app
-│       ├── db.js         # PostgreSQL connection pool
-│       ├── geocode.js    # Nominatim client
-│       └── routes/       # communities, posts, geocode
+│   │   ├── app.js        # Express app (exported for tests)
+│   │   ├── index.js      # starts the server
+│   │   ├── db.js         # PostgreSQL connection pool
+│   │   ├── geocode.js    # Nominatim client
+│   │   └── routes/       # communities, posts, geocode
+│   └── test/             # Vitest + Supertest API tests
 └── fade-frontend/
     └── src/
         ├── api.ts        # all requests to the backend
@@ -85,6 +88,15 @@ npm run dev
 ```
 
 This starts the backend on http://localhost:3000 and the frontend on http://localhost:5173. The frontend calls the backend through Vite's `/api` proxy.
+
+## Running tests
+
+Backend API tests use [Vitest](https://vitest.dev/) and [Supertest](https://github.com/forwardemail/supertest). The database is mocked, so no PostgreSQL setup is needed:
+
+```bash
+cd fade-backend
+npm test
+```
 
 ## API
 
