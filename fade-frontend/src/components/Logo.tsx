@@ -23,13 +23,13 @@ export default function Logo({
     >
       <defs>
         <linearGradient id="fade-logo-bar" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#FF8A65" />
-          <stop offset="100%" stopColor="#FF6B4A" stopOpacity="0.2" />
+          <stop offset="0%" stopColor="#5ab0ff" />
+          <stop offset="100%" stopColor="#0071e3" stopOpacity="0.2" />
         </linearGradient>
       </defs>
       {/* Fading horizontal bars — dissipation / decay */}
       <g transform="translate(15, 16)">
-        <rect className="flb flb-1" x="0" y="8" width="44" height="6.5" rx="3.25" fill="#FF6B4A" />
+        <rect className="flb flb-1" x="0" y="8" width="44" height="6.5" rx="3.25" fill="#0071e3" />
         <rect
           className="flb flb-2"
           x="0"
@@ -46,24 +46,23 @@ export default function Logo({
           width="18"
           height="6.5"
           rx="3.25"
-          fill="#FF6B4A"
+          fill="#0071e3"
           opacity="0.35"
         />
-        <circle cx="28" cy="37.25" r="3.25" fill="#FF6B4A" opacity="0.15" />
+        <circle cx="28" cy="37.25" r="3.25" fill="#0071e3" opacity="0.15" />
       </g>
       {/* Wordmark */}
       <text
         x="75"
         y="49"
-        fontFamily="'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif"
+        fontFamily="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif"
         fontSize="36"
-        fontWeight="700"
+        fontWeight="600"
         letterSpacing="-1.5"
         fill="currentColor"
       >
-        fade
+        fade<tspan fill="#0071e3">.</tspan>
       </text>
-      <circle className="fld" cx="162" cy="45" r="3.5" fill="#FF6B4A" />
     </svg>
   )
 }

@@ -6,24 +6,20 @@ const navItems = [
   { path: '/', label: 'Explore Communities', icon: 'explore', end: true },
 ]
 
+/** Translucent top bar: content scrolls underneath it. */
 export default function Sidebar() {
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest z-50 flex flex-col p-margin">
-      <div className="flex flex-col gap-space-xl">
-        <div className="flex flex-col items-start px-space-xs">
-          <Link
-            to="/"
-            aria-label="fade — home"
-            className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <Logo className="h-9 w-auto max-w-full text-on-surface" />
-          </Link>
-          <span className="font-label-sm text-label-sm text-secondary uppercase mt-1 tracking-wider">
-            7-day ephemeral
-          </span>
-        </div>
+    <header className="material-bar sticky top-0 z-50 border-b border-black/[0.1]">
+      <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-margin sm:px-8">
+        <Link
+          to="/"
+          aria-label="fade — home"
+          className="rounded-lg transition-transform active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <Logo className="h-8 w-auto text-on-surface" />
+        </Link>
 
-        <nav className="flex flex-col gap-space-xs">
+        <nav className="flex items-center gap-space-xs">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
@@ -31,19 +27,19 @@ export default function Sidebar() {
               end={item.end}
               className={({ isActive }) =>
                 [
-                  'flex items-center gap-space-md px-space-md py-space-md rounded-xl transition-colors font-label-md text-label-md',
+                  'flex items-center gap-space-xs rounded-full px-space-md py-1.5 font-body-md text-body-md transition-[background-color,color,transform] duration-100 active:scale-[0.97]',
                   isActive
-                    ? 'bg-surface-container text-primary font-bold shadow-[0_1px_8px_rgba(0,0,0,0.04)]'
-                    : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface',
+                    ? 'bg-black/[0.07] text-on-surface font-medium'
+                    : 'text-on-surface-variant hover:bg-black/[0.04] hover:text-on-surface',
                 ].join(' ')
               }
             >
               <Icon name={item.icon} className="text-lg" />
-              <span>{item.label}</span>
+              <span className="hidden sm:inline">{item.label}</span>
             </NavLink>
           ))}
         </nav>
       </div>
-    </aside>
+    </header>
   )
 }
