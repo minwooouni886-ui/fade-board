@@ -1,11 +1,11 @@
 // Remembers recent searches so repeats never reach Nominatim: key -> { results, expires }
+// Lives in memory, no persistence
 const cache = new Map()
 const CACHE_TTL_MS = 60 * 60 * 1000
 const CACHE_MAX_ENTRIES = 500
 const MAX_QUEUE_WAIT_MS = 5000
 const SLOT_MS = 1000
-// Nominatim's policy requires a User-Agent that identifies the application; a URL or email in it is
-// good practice. No default on purpose: a fork must identify itself, not send requests under our name.
+// Nominatim's policy requires a User-Agent that identifies the application;
 const USER_AGENT = process.env.NOMINATIM_USER_AGENT
 let nextSlot = 0
 
@@ -13,20 +13,23 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+// Rate limiter queue
 async function throttled(fn) {
     const now = Date.now()
     const start = Math.max(now, nextSlot)
+    // Checks if queue wait time is too long
     if (start - now > MAX_QUEUE_WAIT_MS) {
         const err = new Error("Too many requests, please try again later")
         err.status = 429
         throw err
     }
     nextSlot = start + SLOT_MS
+    // Ensure the process waits until the enxt available slot
     await sleep(start - now)
     return fn()
 }
 
-// Short "place, city" label, e.g. "Jan de Oudeweg, Delft", instead of Nominatim's full display_name
+// Short "place, city" label, e.g. "Mekelweg, Delft", instead of Nominatim's full display_name
 export function buildLabel(res) {
     const address = res.address ?? {}
     const place = res.name || address.road || address.pedestrian || address.neighbourhood || address.suburb

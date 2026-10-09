@@ -5,7 +5,8 @@ import { rateLimit } from 'express-rate-limit'
 const router = Router()
 const limiter = rateLimit({
     windowMs: 60_000,
-    limit: 20
+    limit: 20,
+    message: "Too many requests from this IP"
 })
 
 router.get('/geocode', limiter, async (req, res) => {
