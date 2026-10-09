@@ -4,8 +4,8 @@ const CACHE_TTL_MS = 60 * 60 * 1000
 const CACHE_MAX_ENTRIES = 500
 const MAX_QUEUE_WAIT_MS = 5000
 const SLOT_MS = 1000
-// Nominatim's policy requires an identifying User-Agent with a way to contact you (app URL or email).
-// No default on purpose: a fork must identify itself, not send requests under someone else's name.
+// Nominatim's policy requires a User-Agent that identifies the application; a URL or email in it is
+// good practice. No default on purpose: a fork must identify itself, not send requests under our name.
 const USER_AGENT = process.env.NOMINATIM_USER_AGENT
 let nextSlot = 0
 

@@ -28,9 +28,9 @@ top tier before starting the next. Done work is tracked in the README status lis
    on `geom`, a query using `ST_DWithin` and `ST_Distance`, and a `?lat=&lon=&radius=`
    filter on `GET /communities`. Use browser geolocation on the frontend, and bring
    back the "Nearest" sort in `Home.tsx` (commented out right now).
-5. **Location picker in the Create Community form.** Wire the existing
-   `/geocode` endpoint into a debounced search box with a suggestion list, and send
-   `lat` and `lon` with the form. Right now the modal sends only free text.
+5. **Location picker in the Create Community form (done).** Searches on Enter or
+   the search button, not while typing, because Nominatim forbids autocomplete. For
+   real type-ahead, switch to a geocoder built for it (Photon, Geoapify, MapTiler).
 6. **Map view.** Show nearby boards on a Leaflet or MapLibre map with OpenStreetMap
    tiles. It is the most visual thing you can add, and it makes the PostGIS work
    visible in a screenshot.

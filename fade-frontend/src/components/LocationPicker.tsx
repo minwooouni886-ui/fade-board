@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useId, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import Icon from './Icon'
 import type { GeocodeResult } from '../api'
@@ -8,8 +8,11 @@ type Props = {
   onChange: (value: string) => void
   suggestions: GeocodeResult[]
   searching: boolean
+  /** a search for the current text has finished */
+  searched: boolean
   error: string | null
   selected: GeocodeResult | null
+  onSearch: () => void
   onSelect: (place: GeocodeResult) => void
   onClear: () => void
 }
@@ -23,27 +26,18 @@ function splitName(name: string): [string, string] {
   return [title, rest.join(', ')]
 }
 
-export default function LocationPicker({ value, onChange, suggestions, searching, error, selected, onSelect, onClear }: Props) {
+export default function LocationPicker({ value, onChange, suggestions, searching, searched, error, selected, onSearch, onSelect, onClear }: Props) {
   const reduceMotion = useReducedMotion()
   const listId = useId()
   const [focused, setFocused] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
 
-  // "No places found" only once a search for the current text has finished,
-  // so it can't flash during the debounce wait
-  const [doneFor, setDoneFor] = useState('')
-  const wasSearching = useRef(false)
-  useEffect(() => {
-    if (!searching && wasSearching.current) setDoneFor(value)
-    wasSearching.current = searching
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searching])
-
   const isSelected = selected !== null && selected.name === value
-  const longEnough = value.trim().length >= 3
-  const searched = doneFor === value
+  const canSearch = value.trim().length >= 3
   const showEmpty = searched && !searching && suggestions.length === 0 && !error
-  const open = focused && !isSelected && longEnough && (searching || suggestions.length > 0 || showEmpty || !!error)
+  // Nothing searched yet for this text: tell the user how to start a search
+  const showHint = canSearch && !searched && !searching && !error && suggestions.length === 0
+  const open = focused && !isSelected && canSearch && (searching || suggestions.length > 0 || showEmpty || !!error || showHint)
 
   function choose(place: GeocodeResult) {
     setActiveIndex(-1)
@@ -51,6 +45,17 @@ export default function LocationPicker({ value, onChange, suggestions, searching
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
+    // Enter picks the highlighted place, otherwise it runs a search (never submits the form mid-search)
+    if (e.key === 'Enter' && !isSelected) {
+      if (open && activeIndex >= 0 && suggestions[activeIndex]) {
+        e.preventDefault()
+        choose(suggestions[activeIndex])
+      } else if (canSearch) {
+        e.preventDefault()
+        onSearch()
+      }
+      return
+    }
     if (!open) return
     if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -58,10 +63,6 @@ export default function LocationPicker({ value, onChange, suggestions, searching
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setActiveIndex((i) => (suggestions.length === 0 ? -1 : (i <= 0 ? suggestions.length - 1 : i - 1)))
-    } else if (e.key === 'Enter' && activeIndex >= 0 && suggestions[activeIndex]) {
-      // Pick the place instead of submitting the form
-      e.preventDefault()
-      choose(suggestions[activeIndex])
     } else if (e.key === 'Escape') {
       // First Escape closes the list; the modal's own handler never sees it
       e.nativeEvent.stopPropagation()
@@ -101,10 +102,20 @@ export default function LocationPicker({ value, onChange, suggestions, searching
         placeholder="e.g. Mekelweg, Delft"
       />
 
-      {/* Right edge: spinner while searching, check + clear once a place is chosen */}
+      {/* Right edge: search button, spinner while searching, check + clear once a place is chosen */}
       <div className="absolute inset-y-0 right-space-sm flex items-center gap-1">
         {searching && !isSelected && (
           <Icon name="progress_activity" className="animate-spin text-xl text-outline" />
+        )}
+        {!searching && !isSelected && canSearch && (
+          <button
+            type="button"
+            onClick={onSearch}
+            aria-label="Search locations"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant transition-[background-color,transform] duration-100 hover:bg-surface-container-high hover:text-on-surface active:scale-[0.94]"
+          >
+            <Icon name="search" className="text-xl" />
+          </button>
         )}
         {isSelected && (
           <>
@@ -174,6 +185,12 @@ export default function LocationPicker({ value, onChange, suggestions, searching
                 <li role="alert" className="flex items-start gap-space-xs px-space-md py-space-sm font-body-sm text-body-sm text-on-surface-variant">
                   <Icon name="schedule" className="mt-px text-base" />
                   {error}
+                </li>
+              )}
+              {showHint && (
+                <li className="flex items-center gap-space-xs px-space-md py-space-sm font-body-sm text-body-sm text-on-surface-variant">
+                  <Icon name="keyboard_return" className="text-base" />
+                  Press Enter to search
                 </li>
               )}
               {showEmpty && (

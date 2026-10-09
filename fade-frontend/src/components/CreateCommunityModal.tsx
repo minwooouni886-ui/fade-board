@@ -16,6 +16,7 @@ export default function CreateCommunityModal({ onClose, onCreated }: { onClose: 
   const [error, setError] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<GeocodeResult[]>([])
   const [searching, setSearching] = useState(false)
+  const [searched, setSearched] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
   const [selected, setSelected] = useState<GeocodeResult | null>(null)
 
@@ -64,40 +65,41 @@ export default function CreateCommunityModal({ onClose, onCreated }: { onClose: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // location handler
-  useEffect(() => {
-    if (location.trim().length < 4 || selected?.name === location) {
-      setSuggestions([])
-      setSearchError(null)
-      return
-    }
+  // Nominatim's policy forbids search-as-you-type, so a search only runs when the user asks for it
+  // (Enter or the search button). Each search gets an id; a response is dropped if a newer
+  // search, an edit or a pick has happened since.
+  const searchId = useRef(0)
 
-    let cancelled = false
-    const timer = setTimeout(async () => {
-      setSearching(true)
-      setSearchError(null)
-      try {
-        const results = await searchLocations(location)
-        if (!cancelled) setSuggestions(results)
-      } catch (e) {
-        if (!cancelled) {
-          setSuggestions([])
-          setSearchError(
-            e instanceof ApiError && e.status === 429
-              ? 'Too many searches. Please wait a moment and try again.'
-              : 'Location search is unavailable. You can still type an address.',
-          )
-        }
-      } finally {
-        if (!cancelled) setSearching(false)
-      }
-    }, 800)
+  // Forget any results and ignore a search still in flight
+  function resetSearch() {
+    searchId.current++
+    setSuggestions([])
+    setSearching(false)
+    setSearched(false)
+    setSearchError(null)
+  }
 
-    return () => {
-      clearTimeout(timer)
-      cancelled = true
+  async function handleSearch() {
+    const query = location.trim()
+    if (query.length === 0) return
+    resetSearch()
+    const id = searchId.current
+    setSearching(true)
+    try {
+      const results = await searchLocations(query)
+      if (id !== searchId.current) return
+      setSuggestions(results)
+    } catch (e) {
+      if (id !== searchId.current) return
+      setSearchError(
+        e instanceof ApiError && e.status === 429
+          ? 'Too many searches. Please wait a moment and try again.'
+          : 'Location search is unavailable. You can still type an address.',
+      )
     }
-  }, [location, selected])
+    setSearching(false)
+    setSearched(true)
+  }
 
   async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault()
@@ -198,19 +200,23 @@ export default function CreateCommunityModal({ onClose, onCreated }: { onClose: 
               value={location}
               onChange={(v) => {
                 setLocation(v)
-                // Editing the text invalidates the chosen coordinates
+                // Editing the text invalidates the chosen coordinates and any old results
                 if (selected && v !== selected.name) setSelected(null)
+                resetSearch()
               }}
               suggestions={suggestions}
               searching={searching}
+              searched={searched}
               error={searchError}
               selected={selected}
+              onSearch={handleSearch}
               onSelect={(place) => {
+                resetSearch()
                 setSelected(place)
                 setLocation(place.name)
-                setSuggestions([])
               }}
               onClear={() => {
+                resetSearch()
                 setSelected(null)
                 setLocation('')
               }}
