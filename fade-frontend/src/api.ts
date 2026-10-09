@@ -68,3 +68,7 @@ export function fetchCommunityPosts(communityId: string | number) {
 export function createCommunity(name: string, description: string | null, location: string | null, lat: number | null, lon: number | null) {
   return apiPost<ApiCommunity>('/communities', {name, description, location, lat, lon})
 }
+
+export function createPost(communityId: string | number, title: string, description: string | null, category: string | null, durationHours: number) {
+  return apiPost<ApiPost[]>(`/communities/${communityId}/posts`, { title, description, category, duration_hours: durationHours })
+}

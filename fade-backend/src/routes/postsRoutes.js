@@ -14,7 +14,8 @@ router.get('/communities/:id/posts', async (req, res) => {
     }
 
     try {
-        const result = await db.query('SELECT * FROM posts WHERE community_id = $1', [req.params.id])
+        // Return rows that haven't expired yet
+        const result = await db.query('SELECT * FROM posts WHERE community_id = $1 AND expires_at > NOW()', [req.params.id])
         return res.status(200).json(result.rows)
     } catch (e) {
         console.error(`Error: ${e}`)
