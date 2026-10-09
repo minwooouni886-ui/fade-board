@@ -18,8 +18,10 @@ Local community boards where nothing lasts. People create boards for their neigh
 
 - **Explore communities**: browse all boards, sorted by newest.
 - **Create a community** from a modal, with validation errors from the backend shown in the form.
+- **Location picker**: type an address in the form, press Enter (or click the search button), and pick from up to 5 results (keyboard friendly, with loading, empty and error states). The chosen place's coordinates are saved with the board, along with a short label such as "Jan de Oudeweg, Delft".
 - **Board page** with its Sparks. Each Spark has an expiry time (1 to 168 hours) and a countdown bar, and is hidden once it has expired.
 - **Location search**: `GET /geocode` looks up an address through Nominatim and returns up to 5 matches.
+- **Follows the Nominatim usage policy**: the public server forbids search-as-you-type, so the frontend only searches when the user presses Enter or the search button. The backend sends at most one request per second to Nominatim (extra requests queue, and are rejected with 429 if the wait would be too long), caches results for an hour, rate-limits each client to 20 searches a minute, and identifies the app with its own User-Agent.
 - **Geographic storage**: community coordinates are stored as PostGIS `geography(Point, 4326)` values, ready for distance queries.
 
 ## Project structure
@@ -77,7 +79,13 @@ DB_PASSWORD=your-password
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=fade
+NOMINATIM_USER_AGENT=fade-board/1.0 (https://github.com/your-name/fade-board)
 ```
+
+`NOMINATIM_USER_AGENT` is required for location search. Nominatim's usage policy requires a
+User-Agent that identifies your application (generic library defaults are not accepted). Use your
+own app name, and include your app's URL or an email so they can reach you if there is a problem.
+There is no default on purpose: without it, `/geocode` fails and the backend logs what is missing.
 
 ### 4. Run
 
@@ -109,14 +117,14 @@ npm test
 | POST | `/communities/:id/posts` | Create a post: `title`, `duration_hours` (1 to 168), `description`, `category` |
 | GET | `/posts/:id` | Get one post |
 | DELETE | `/posts/:id` | Delete a post |
-| GET | `/geocode?q=...` | Search for a place; returns up to 5 `{ name, lat, lon }` matches |
+| GET | `/geocode?q=...` | Search for a place; returns up to 5 `{ name, label, lat, lon }` matches. Responds `429` when rate limited or the queue is full |
 
 ## Status
 
 - [x] Browse communities and board pages
 - [x] Create communities
 - [x] Geocoding endpoint and PostGIS storage
-- [ ] Location search and picker in the Create Community form
+- [x] Location search and picker in the Create Community form
 - [ ] "Nearby" search and distance sorting with PostGIS
 - [ ] Creating Sparks from the board page
 - [ ] User accounts, and only owners can delete their boards

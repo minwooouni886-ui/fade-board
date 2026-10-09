@@ -14,10 +14,26 @@ export type ApiPost = {
   expires_at: string
 }
 
+export type GeocodeResult = {
+  name: string
+  label: string
+  lat: number
+  lon: number
+}
+
+// Carries the HTTP status so callers can react to specific failures, like 429
+export class ApiError extends Error {
+  status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.status = status
+  }
+}
+
 async function apiFetch<T>(path: string): Promise<T> {
   const res = await fetch(`/api${path}`)
   if (!res.ok) {
-    throw new Error(`Request to ${path} failed with status ${res.status}`)
+    throw new ApiError(`Request to ${path} failed with status ${res.status}`, res.status)
   }
   return res.json()
 }
@@ -36,6 +52,11 @@ async function apiPost<T>(path: string, body: unknown): Promise<T> {
   return res.json()
 }
 
+// for fetching geocode results
+export function searchLocations(query: string) {
+  return apiFetch<GeocodeResult[]>(`/geocode?q=${encodeURIComponent(query)}`)
+}
+
 export function fetchCommunities() {
   return apiFetch<ApiCommunity[]>('/communities')
 }
@@ -44,6 +65,6 @@ export function fetchCommunityPosts(communityId: string | number) {
   return apiFetch<ApiPost[]>(`/communities/${communityId}/posts`)
 }
 
-export function createCommunity(name: string, description: string | null, location: string | null) {
-  return apiPost<ApiCommunity[]>('/communities', {name, description, location})
+export function createCommunity(name: string, description: string | null, location: string | null, lat: number | null, lon: number | null) {
+  return apiPost<ApiCommunity>('/communities', {name, description, location, lat, lon})
 }

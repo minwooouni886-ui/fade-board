@@ -1,147 +1,71 @@
-# Removed features — not implemented yet
+# TODO
 
-Stripped out of `Community.tsx` and `data/mock.ts` because they were either dead
-code or fully non-functional UI with no backend behind them. Kept here so
-nothing gets forgotten. Re-add when the backend support exists.
+Ordered by how much each item shows off to someone reviewing the repo. Finish the
+top tier before starting the next. Done work is tracked in the README status list.
 
-## 1. Dead mock code (`data/mock.ts`)
-The `Spark` type and `sparks` array. Not removed for a feature reason — just
-stale leftovers after `SparkCard` was switched to consume real `ApiPost` data
-from the backend instead of mock data. Nothing to reimplement here.
+## Tier 1: make it a real, working product
 
-## 2. "Trending Now / Expiring Soon" tabs (`Community.tsx`)
-Two pill buttons above the feed. `activeTab` state existed and visually
-highlighted the selected tab, but never actually filtered `feed` — clicking
-them did nothing to what posts were shown.
+1. **Create Sparks from the board page.** The backend endpoint exists
+   (`POST /communities/:id/posts`, `title` and `duration_hours` 1 to 168 required).
+   Add `createPost` to `api.ts`, a composer (title, description, category, duration
+   picker), and show the backend's 400 errors in the form. Without this the app
+   can't post, which is the whole point of it.
+2. **Make expiry real on the server.** `GET /communities/:id/posts` returns every
+   post and the frontend hides expired ones. Filter with `expires_at > NOW()` in
+   the query, then add a cleanup job that deletes expired rows (a scheduled
+   `DELETE`, or `pg_cron`). Test both. Right now "posts fade away" is only true
+   in the UI.
+3. **Deploy it.** Frontend on Vercel or Netlify, backend and Postgres with PostGIS
+   on Render, Fly.io, or Railway. Put the live URL at the top of the README. A
+   running link beats any other line on the page. Before going live, add
+   `app.set('trust proxy', 1)` in `app.js` (production only), so the `/geocode`
+   rate limiter sees each visitor's real IP instead of the host's proxy and
+   doesn't count everyone as one client.
 
-To bring back for real: decide what "Trending" means (most-recently-created?
-some future boost count?) and what "Expiring Soon" means (e.g. `expires_at`
-within the next N hours), then filter/sort `feed` based on `activeTab` before
-mapping it to `SparkCard`s.
+## Tier 2: the features that make it technically interesting
 
-## 3. "Fading Out Today" sidebar widget (`Community.tsx`)
-Sidebar card listing 3 hardcoded posts about to expire. No backend endpoint
-backed this at all — the data was 100% static in `mock.ts`.
+4. **"Nearby" with PostGIS.** The coordinates are already stored. Add a GiST index
+   on `geom`, a query using `ST_DWithin` and `ST_Distance`, and a `?lat=&lon=&radius=`
+   filter on `GET /communities`. Use browser geolocation on the frontend, and bring
+   back the "Nearest" sort in `Home.tsx` (commented out right now).
+5. **Location picker in the Create Community form (done).** Searches on Enter or
+   the search button, not while typing, because Nominatim forbids autocomplete. For
+   real type-ahead, switch to a geocoder built for it (Photon, Geoapify, MapTiler).
+6. **Map view.** Show nearby boards on a Leaflet or MapLibre map with OpenStreetMap
+   tiles. It is the most visual thing you can add, and it makes the PostGIS work
+   visible in a screenshot.
+7. **Live updates.** Push new Sparks to open boards with Server-Sent Events or
+   WebSockets, and tick the "time left" labels so they stop going stale. Good talking
+   point about connection handling and trade-offs.
 
-To bring back for real: this needs to query posts across the *current*
-community (or all communities?) where `expires_at` is within ~6 hours, sorted
-soonest-first. Could reuse `fetchCommunityPosts` and filter client-side like
-`feed` already does, or add a dedicated backend query if you want it to
-span multiple communities.
+## Tier 3: engineering quality recruiters look for
 
-## 4. "Ignite Spark" composer (`Community.tsx`)
-The textarea + "Fade after: 24h / 3d / 7d Max" buttons + attach icons +
-"Ignite Spark" submit button. Fully inert — no `onSubmit`/`onClick` ever
-called the backend. `draft`/`lifespan` state existed but had no consumer.
+8. **CI.** A GitHub Actions workflow that runs lint, typecheck, build, and the
+   backend tests on every push. Add the status badge to the README.
+9. **Real-database tests.** The current backend tests mock the database. Add an
+   integration suite against a real Postgres with PostGIS (a CI service container
+   or Testcontainers) that covers the migrations, the expiry filter, and the
+   distance query.
+10. **Frontend tests.** Vitest and React Testing Library for the card and modal
+    logic (validation, error display, expiry labels), plus one Playwright test of
+    the create-board and post-a-Spark flow.
+11. **Input validation and hardening.** Schema validation on request bodies (zod),
+    rate limiting on the write endpoints and `/geocode` (Nominatim has a usage
+    policy), a Nominatim cache, and proper 404 and error handling on every route.
+12. **One-command setup.** A `docker-compose.yml` with Postgres and PostGIS plus
+    the migrations, so anyone can run the project without installing PostGIS.
+13. **API docs.** An OpenAPI spec served at `/docs`, replacing the README table.
 
-To bring back for real:
-1. Add a `createPost(communityId, { title, description, category,
-   duration_hours })` function to `api.ts` — a `POST` to
-   `/api/communities/:id/posts` (see `postsRoutes.js` for what it expects:
-   `title` and `duration_hours` are required, `duration_hours` must be
-   1–168).
-2. Wire the submit button's `onClick` to call it, then either refetch
-   `posts` or prepend the returned row to the existing `posts` state.
-3. Surface the backend's 400 validation errors in the UI instead of failing
-   silently.
+## Tier 4: accounts and polish
 
-## 5. Category filter pills on Home (`data/mock.ts`, rendered in `Home.tsx`)
-`categoryPills` used to have 6 entries: "All Active (18)", "Design & Creative",
-"Buy/Sell Swaps", "Nightlife & Coffee", "Study Pods", "Greenery". Only "All
-Active (18)" is left. Same problem as the other removals — clicking a pill
-never filtered `sortedCommunities` at all; there was no state tied to
-category selection, `pill.active` was just a hardcoded `true` on one mock
-entry. `sortedCommunities` in `Home.tsx` only ever reacts to the `sort`
-dropdown, never to category.
-
-To bring back for real:
-1. The DB has no `category` column on `communities` (only on `posts`) — decide
-   whether communities need one, or whether "category" here should instead
-   come from aggregating each community's posts' categories.
-2. Add a `selectedCategory` state (`useState`) in `Home.tsx`, wire each pill's
-   `onClick` to set it, and derive `pill.active` from
-   `pill.label === selectedCategory` instead of a hardcoded mock field.
-3. Filter `sortedCommunities` by the selected category before sorting.
-4. The `(18)` count in "All Active (18)" is also hardcoded — should be
-   `communities.length` once this is real.
-
-## 6. Top bar (`components/Topbar.tsx`, deleted)
-Fixed header with a hardcoded "Delft, Netherlands (2km)" location chip, a
-search input ("Search local boards, sparks, tags..."), a "Filter Radius"
-button and a "New Spark" button. None of it was wired to anything.
-`Layout.tsx` had `pt-16` on `<main>` to make room for it.
-
-To bring back for real: location needs either browser geolocation or a
-user setting, plus a `location`-based query on the backend. Search needs a
-search endpoint (or client-side filtering of loaded communities/posts).
-
-## 7. Sidebar extras (`components/Sidebar.tsx`)
-- "My Boards" nav link to `/my-boards`: the route never existed in `App.tsx`.
-  Could list the boards from `useMembership` once membership is persisted.
-- "Expiring Soon (24h)" and "Activity & Sparks" links: `href="#..."` anchors
-  that went nowhere.
-- Profile button at the bottom showing the fake `currentUser` ("Alex Vance")
-  from `mock.ts`. Needs a real user/auth system first.
-
-## 8. Home page extras (`pages/Home.tsx`)
-- "Radius Active: 2.5 km" badge and "Within 2.0 km" button: hardcoded,
-  no radius logic anywhere.
-- "Active Nearby: 142 Sparks / Fading Today: 38 Sparks" stats: hardcoded
-  numbers. Could come from a backend count query (posts where
-  `expires_at > now`, and `expires_at` within 24h).
-- "Spark a Fresh Community Board" tile with "Read Board Guidelines" and
-  "Pin New Board" buttons (no `onClick`). Also deleted
-  `components/SparkBurst.tsx` (its icon) and the `.spark-burst` CSS in
-  `index.css`. Bringing it back means a `POST /api/communities` endpoint
-  and a create-community form.
-- Category pills (see #5): the remaining "All Active (18)" pill and the
-  `categoryPills` export in `mock.ts` are now gone too, along with the
-  `.no-scrollbar` CSS they used.
-
-## 9. Community page extras (`pages/Community.tsx`)
-- Filter input ("Filter tags, authors, roles...") and "New Spark" button
-  from the action bar. "New Spark" pairs with the composer in #4.
-- Right sidebar column with a "Board Policy & Ethics" link (`#policy`,
-  went nowhere). The feed is now a single column (`max-w-3xl`).
-
-## 10. Member avatars on community cards (`components/CommunityCard.tsx`)
-Row of 2–3 stock faces (pravatar.cc) plus a "+42" overflow bubble, from the
-`avatars` / `overflowCount` mock fields. There's no account system, so they
-were fake. To bring back: once users exist, have the backend return a few
-member avatars and the total member count per community.
-
-## 11. Mock-only community fields (`data/mock.ts`, `CommunityCard.tsx`)
-Removed because the backend has no data for them:
-- Category tag on each card (`category`, `categoryIcon`, `categoryTone`).
-  The `communities` table has no `category` column (see #5).
-- "N members" count (`members`) and `memberCount()` in the membership
-  context, which added 1 when you'd joined. Needs a real membership table.
-- "N live Sparks" count (`liveSparks`) and the "Most Active" sort that used
-  it. Could come from a backend count of non-expired posts per community.
-- On the board page: the "N members online" counter (was always 0, or 1 if
-  joined) and the hardcoded "Live Hub" badge. The "N live Sparks" counter
-  there is real (it's `feed.length`) and was kept.
-
-## 12. Post author on Spark cards (`components/SparkCard.tsx`)
-Grey person-icon avatar plus the hardcoded name "Community Member" on every
-post. No author system exists. To bring back: add an author/user to posts
-on the backend, return it from `GET /communities/:id/posts`, and render it
-in the SparkCard header next to the category.
-
-## Still using mock data
-`Home.tsx` reads communities from `data/mock.ts`, not the backend.
-`fetchCommunities()` in `api.ts` already exists. Switch Home to it (with
-loading/error states like `Community.tsx`). Note the mock still has two fields
-the backend doesn't (`image`, `distanceLabel`), so `CommunityCard` will need
-adjusting too. `distanceLabel` is for when PostGIS is in.
-
-## 13. Join Board / membership (`context/`, deleted)
-`MembershipProvider.tsx` + `membership.ts` held a `Set` of joined board IDs
-in React Context. "Join Board" on a community card had to be clicked before
-"Enter Board" appeared, and the board page had a Join/Joined button. It was
-browser-memory only (lost on refresh) and there are no user accounts, so it
-was removed. Cards now always show "Enter Board".
-
-To bring back for real: needs user accounts first, then a `memberships`
-table (user_id, community_id) with join/leave endpoints. The frontend can
-then fetch the user's memberships and show Join/Leave again.
+14. **User accounts.** Sign-up and login (JWT or sessions), post authorship shown on
+    Spark cards, and only owners can delete their boards and Sparks. Do this after
+    the tiers above, since it touches every route.
+15. **Dark mode.** Move the color tokens in `tailwind.config.js` to CSS variables
+    with a light and a dark set, follow `prefers-color-scheme`, and add a toggle.
+16. **README that sells it.** A short demo GIF or screenshots at the top, an
+    architecture diagram, and a "decisions" section (why PostGIS, why expiry is
+    enforced in the query and in a job, why Nominatim). Being able to explain the
+    choices is worth more than the feature list.
+17. **Accessibility pass.** Focus trap in the modal, keyboard navigation for the
+    cards, and a Lighthouse score in the README.

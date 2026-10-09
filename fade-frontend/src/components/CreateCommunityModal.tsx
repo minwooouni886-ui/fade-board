@@ -1,14 +1,8 @@
 import Icon from './Icon'
+import LocationPicker from './LocationPicker'
 import { useEffect, useRef, useState } from 'react'
-import { motion, useAnimationControls, useDragControls, useReducedMotion, type PanInfo } from 'motion/react'
-import { createCommunity } from '../api'
-
-// Apple's momentum projection: where a flick of this velocity (px/s) would coast to rest
-function project(velocity: number, decelerationRate = 0.998) {
-  return ((velocity / 1000) * decelerationRate) / (1 - decelerationRate)
-}
-
-const DISMISS_DISTANCE = 140
+import { motion, useAnimationControls, useReducedMotion } from 'motion/react'
+import { ApiError, createCommunity, searchLocations, type GeocodeResult } from '../api'
 
 const inputClass =
   'w-full bg-surface-container rounded-2xl px-space-md py-space-sm text-on-surface font-body-lg text-body-lg placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary-container'
@@ -20,12 +14,18 @@ export default function CreateCommunityModal({ onClose, onCreated }: { onClose: 
   const [location, setLocation] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [suggestions, setSuggestions] = useState<GeocodeResult[]>([])
+  const [searching, setSearching] = useState(false)
+  const [searched, setSearched] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
+  const [selected, setSelected] = useState<GeocodeResult | null>(null)
 
   const reduceMotion = useReducedMotion()
   const scrim = useAnimationControls()
   const panel = useAnimationControls()
-  const dragControls = useDragControls()
   const closing = useRef(false)
+  const pressedOnScrim = useRef(false)
+  
   // Captured during the first render, before autoFocus moves focus into the form
   const [opener] = useState(() => document.activeElement as HTMLElement | null)
 
@@ -40,22 +40,16 @@ export default function CreateCommunityModal({ onClose, onCreated }: { onClose: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Exit along the path it entered; a drag-dismiss keeps the finger's velocity
-  function dismiss(velocityY = 0) {
+  // Exit along the path it entered
+  function dismiss() {
     if (closing.current) return
     closing.current = true
     scrim.start({ opacity: 0, transition: { duration: 0.2 } })
-    // Unmount once the exit has played; the panel is invisible or off-screen by then
+    // Unmount once the exit has played; the panel is invisible by then
     let exitMs = 350
     if (reduceMotion) {
       exitMs = 160
       panel.start({ opacity: 0, transition: { duration: 0.15 } })
-    } else if (velocityY > 0) {
-      exitMs = 450
-      panel.start({
-        y: window.innerHeight,
-        transition: { type: 'spring', bounce: 0, duration: 0.4, velocity: velocityY },
-      })
     } else {
       panel.start({ y: 24, scale: 0.96, opacity: 0, transition: { type: 'spring', bounce: 0, duration: 0.3 } })
     }
@@ -71,16 +65,40 @@ export default function CreateCommunityModal({ onClose, onCreated }: { onClose: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  function handleDragEnd(_: PointerEvent, info: PanInfo) {
-    // A near-instant release can report a non-finite velocity; a spring given NaN never moves
-    const velocity = Number.isFinite(info.velocity.y) ? info.velocity.y : 0
-    // Choose the destination from where the flick is *going*, not where it was released
-    if (info.offset.y + project(velocity) > DISMISS_DISTANCE) {
-      dismiss(velocity)
-    } else {
-      // A little bounce is earned here: the gesture carried momentum
-      panel.start({ y: 0, transition: { type: 'spring', bounce: 0.2, duration: 0.4, velocity } })
+  // Nominatim's policy forbids search-as-you-type, so a search only runs when the user asks for it
+  // (Enter or the search button). Each search gets an id; a response is dropped if a newer
+  // search, an edit or a pick has happened since.
+  const searchId = useRef(0)
+
+  // Forget any results and ignore a search still in flight
+  function resetSearch() {
+    searchId.current++
+    setSuggestions([])
+    setSearching(false)
+    setSearched(false)
+    setSearchError(null)
+  }
+
+  async function handleSearch() {
+    const query = location.trim()
+    if (query.length === 0) return
+    resetSearch()
+    const id = searchId.current
+    setSearching(true)
+    try {
+      const results = await searchLocations(query)
+      if (id !== searchId.current) return
+      setSuggestions(results)
+    } catch (e) {
+      if (id !== searchId.current) return
+      setSearchError(
+        e instanceof ApiError && e.status === 429
+          ? 'Too many searches. Please wait a moment and try again.'
+          : 'Location search is unavailable. You can still type an address.',
+      )
     }
+    setSearching(false)
+    setSearched(true)
   }
 
   async function handleSubmit(e: React.SubmitEvent) {
@@ -94,7 +112,7 @@ export default function CreateCommunityModal({ onClose, onCreated }: { onClose: 
     }
 
     try {
-      await createCommunity(name, description, location)
+      await createCommunity(name, description, selected?.label ?? location, selected?.lat ?? null, selected?.lon ?? null)
     } catch (error) {
       console.log(error)
       setError( error instanceof Error ? error.message : 'Something went wrong')
@@ -113,7 +131,13 @@ export default function CreateCommunityModal({ onClose, onCreated }: { onClose: 
       initial={{ opacity: 0 }}
       animate={scrim}
       className="fixed inset-0 z-[60] flex items-end justify-center bg-black/30 backdrop-blur-sm sm:items-center sm:p-4"
-      onClick={() => dismiss()}
+      // Only a press that started on the overlay may close it, so dragging out of the panel doesn't
+      onPointerDown={(e) => {
+        pressedOnScrim.current = e.target === e.currentTarget
+      }}
+      onClick={() => {
+        if (pressedOnScrim.current) dismiss()
+      }}
     >
       {/* The panel. stopPropagation so clicks inside don't reach the overlay and close it.
           A bottom sheet on phones, a centered card on larger screens. */}
@@ -123,31 +147,10 @@ export default function CreateCommunityModal({ onClose, onCreated }: { onClose: 
         aria-labelledby="create-community-title"
         initial={reduceMotion ? { opacity: 0 } : { y: 24, scale: 0.96, opacity: 0 }}
         animate={panel}
-        drag="y"
-        dragListener={false}
-        dragControls={dragControls}
-        dragConstraints={{ top: 0 }}
-        dragElastic={{ top: 0.12, bottom: 0 }}
-        dragMomentum={false}
-        onDragEnd={handleDragEnd}
-        className="w-full max-w-lg rounded-t-[24px] rounded-b-none bg-surface-container-low p-space-xl pt-space-sm shadow-[0_24px_64px_rgba(0,0,0,0.18)] ring-1 ring-black/[0.06] sm:rounded-[24px] sm:pt-space-xl"
+        className="w-full max-w-lg rounded-t-[24px] rounded-b-none bg-surface-container-low p-space-xl shadow-[0_24px_64px_rgba(0,0,0,0.18)] ring-1 ring-black/[0.06] sm:rounded-[24px]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Grab area: drag from here (or the header) to dismiss */}
-        <div
-          className="-mx-space-xl mb-space-xs flex cursor-grab touch-none justify-center py-space-sm active:cursor-grabbing sm:hidden"
-          onPointerDown={(e) => dragControls.start(e)}
-          aria-hidden="true"
-        >
-          <span className="h-1 w-9 rounded-full bg-black/15" />
-        </div>
-        <div
-          className="flex items-start justify-between gap-space-md mb-space-lg touch-none sm:touch-auto"
-          onPointerDown={(e) => {
-            if ((e.target as HTMLElement).closest('button')) return
-            dragControls.start(e)
-          }}
-        >
+        <div className="flex items-start justify-between gap-space-md mb-space-lg">
           <div>
             <h2 id="create-community-title" className="font-headline-md text-headline-md text-on-surface">
               New Community
@@ -193,7 +196,31 @@ export default function CreateCommunityModal({ onClose, onCreated }: { onClose: 
           <label className="flex flex-col gap-space-xs">
             <span className={labelClass}>Location</span>
             {/* location, using Nominatim */}
-            <input value={location} onChange={(e) => setLocation(e.target.value)} type="text" className={inputClass} placeholder="e.g. Mekelweg, Delft" />
+            <LocationPicker
+              value={location}
+              onChange={(v) => {
+                setLocation(v)
+                // Editing the text invalidates the chosen coordinates and any old results
+                if (selected && v !== selected.name) setSelected(null)
+                resetSearch()
+              }}
+              suggestions={suggestions}
+              searching={searching}
+              searched={searched}
+              error={searchError}
+              selected={selected}
+              onSearch={handleSearch}
+              onSelect={(place) => {
+                resetSearch()
+                setSelected(place)
+                setLocation(place.name)
+              }}
+              onClear={() => {
+                resetSearch()
+                setSelected(null)
+                setLocation('')
+              }}
+            />
           </label>
 
           {/* error handler */}
