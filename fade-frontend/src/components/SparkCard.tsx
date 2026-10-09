@@ -2,8 +2,8 @@ import type { ApiPost } from '../api'
 
 const SPARK_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
 
-function timeRemaining(expiresAt: string) {
-  const ms = new Date(expiresAt).getTime() - Date.now()
+function timeRemaining(expiresAt: string, now: number) {
+  const ms = new Date(expiresAt).getTime() - now
   if (ms <= 0) {
     return { label: 'Faded', urgent: true, decay: 0 }
   }
@@ -12,13 +12,14 @@ function timeRemaining(expiresAt: string) {
   const days = Math.floor(totalMinutes / (60 * 24))
   const hours = Math.floor((totalMinutes % (60 * 24)) / 60)
   const minutes = totalMinutes % 60
-  const label = days >= 1 ? `${days}d ${hours}h left` : `${hours}h ${minutes}m left`
-  const urgent = totalMinutes < 6 * 60
+  const seconds = String(Math.floor(ms / 1000) % 60).padStart(2, '0')
+  const label = days >= 1 ? `${days}d ${hours}h left` : (hours >= 1 ? `${hours}h ${minutes}m left`: (totalMinutes >= 5 ? `${minutes}m left` : `${minutes}m ${seconds}s left`))
+  const urgent = totalMinutes < 5
   return { label, urgent, decay }
 }
 
-export default function SparkCard({ post }: { post: ApiPost }) {
-  const { label, urgent, decay } = timeRemaining(post.expires_at)
+export default function SparkCard({ post, now }: { post: ApiPost, now: number }) {
+  const { label, urgent, decay } = timeRemaining(post.expires_at, now)
 
   return (
     // The whole card fades as the Spark nears expiry

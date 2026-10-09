@@ -1,17 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import Icon from '../components/Icon'
 import SparkCard from '../components/SparkCard'
 import CreateSparkModal from '../components/CreateSparkModal'
 import { fetchCommunities, fetchCommunityPosts, type ApiCommunity, type ApiPost } from '../api'
 
+// How long an expired Spark stays on screen reading "Faded" before it dissolves
+const FADE_HOLD_MS = 600
+
 export default function Community() {
   const { id } = useParams()
+  const reduceMotion = useReducedMotion()
   const [community, setCommunity] = useState<ApiCommunity | null>(null)
   const [posts, setPosts] = useState<ApiPost[]>([])
   const [composerOpen, setComposerOpen] = useState(false)
   const sparkButton = useRef<HTMLButtonElement>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   // Load the board and its posts from the backend when the page opens
   useEffect(() => {
@@ -44,6 +55,17 @@ export default function Community() {
     return <p className="py-16 text-center font-body-md text-body-md text-on-surface-variant">{message}</p>
   }
 
+  // Derived from `now` on every tick: a Spark leaves the feed once its hold has passed,
+  // while the header counts only the Sparks that are still alive
+  const visiblePosts = posts.filter((p) => new Date(p.expires_at).getTime() + FADE_HOLD_MS > now)
+  const liveCount = posts.filter((p) => new Date(p.expires_at).getTime() > now).length
+
+  // A Spark dissolves in place (fade, shrink a little, blur) and arrives the same way in reverse.
+  // Reduced motion keeps only the cross-fade.
+  const hidden = reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, filter: 'blur(4px)' }
+  const shown = reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, filter: 'blur(0px)' }
+  const dissolve = reduceMotion ? { duration: 0.2 } : { duration: 0.35, ease: 'easeOut' as const }
+
   return (
     <div className="flex flex-col w-full pb-16 pt-12">
       <title>{`Fade · ${community.name}`}</title>
@@ -65,20 +87,42 @@ export default function Community() {
         <p className="font-body-lg text-body-lg text-on-surface-variant">{community.description}</p>
         <p className="flex items-center gap-space-xs mt-space-xs font-body-sm text-body-sm text-outline">
           <Icon name="schedule" className="text-base" />
-          {posts.length} live Sparks · every Spark fades within 7 days
+          {liveCount} live Sparks · every Spark fades within 7 days
         </p>
       </div>
 
       {/* Feed */}
-      <div className="flex flex-col gap-space-md max-w-3xl">
-        {posts.length === 0 && (
-          <p className="p-space-xl rounded-[20px] bg-surface-container-low text-center text-on-surface-variant font-body-md text-body-md">
+      <div className="relative flex flex-col gap-space-md max-w-3xl">
+        {visiblePosts.length === 0 && (
+          // Waits for the last card to finish dissolving before it appears
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.3, delay: reduceMotion ? 0.2 : 0.4 } }}
+            className="p-space-xl rounded-[20px] bg-surface-container-low text-center text-on-surface-variant font-body-md text-body-md"
+          >
             No active Sparks in this board right now.
-          </p>
+          </motion.p>
         )}
-        {posts.map((post) => (
-          <SparkCard key={post.id} post={post} />
-        ))}
+        {/* popLayout takes a leaving card out of the flow at once, so the cards below glide up
+            into its place with a critically damped spring while it dissolves.
+            initial={false}: the first render shows the feed without animating every card in. */}
+        <AnimatePresence initial={false} mode="popLayout">
+          {visiblePosts.map((post) => (
+            <motion.div
+              key={post.id}
+              layout={!reduceMotion}
+              initial={hidden}
+              animate={shown}
+              exit={hidden}
+              transition={{
+                ...dissolve,
+                layout: { type: 'spring', bounce: 0, duration: 0.4 },
+              }}
+            >
+              <SparkCard post={post} now={now} />
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
 
       {composerOpen && (
