@@ -77,7 +77,12 @@ DB_PASSWORD=your-password
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=fade
+NOMINATIM_USER_AGENT=fade-board/1.0 (https://github.com/your-name/fade-board)
 ```
+
+`NOMINATIM_USER_AGENT` is optional. Nominatim's usage policy requires an identifying
+User-Agent with a way to contact you (your app's URL or an email), so set it to your own
+before deploying.
 
 ### 4. Run
 
