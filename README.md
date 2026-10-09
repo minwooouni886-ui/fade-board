@@ -19,7 +19,9 @@ Local community boards where nothing lasts. People create boards for their neigh
 - **Explore communities**: browse all boards, sorted by newest.
 - **Create a community** from a modal, with validation errors from the backend shown in the form.
 - **Location picker**: type an address in the form, press Enter (or click the search button), and pick from up to 5 results (keyboard friendly, with loading, empty and error states). The chosen place's coordinates are saved with the board, along with a short label such as "Jan de Oudeweg, Delft".
-- **Board page** with its Sparks. Each Spark has an expiry time (1 to 168 hours) and a countdown bar, and is hidden once it has expired.
+- **Board page** with its Sparks. Each Spark has an expiry time (1 to 168 hours), a live countdown that ticks every second, and a decay bar.
+- **Post a Spark**: a New Spark button opens a composer with a title, details, a category and how long it lasts (1 hour, 24 hours, 3 days or 7 days).
+- **Sparks fade away**: when time runs out a Spark reads "Faded", dissolves, and the cards below glide up (a plain cross-fade with reduced motion). The API only returns unexpired posts, and the backend deletes expired rows on startup and every 10 minutes.
 - **Location search**: `GET /geocode` looks up an address through Nominatim and returns up to 5 matches.
 - **Follows the Nominatim usage policy**: the public server forbids search-as-you-type, so the frontend only searches when the user presses Enter or the search button. The backend sends at most one request per second to Nominatim (extra requests queue, and are rejected with 429 if the wait would be too long), caches results for an hour, rate-limits each client to 20 searches a minute, and identifies the app with its own User-Agent.
 - **Geographic storage**: community coordinates are stored as PostGIS `geography(Point, 4326)` values, ready for distance queries.
@@ -35,6 +37,7 @@ fade-board/
 │   │   ├── app.js        # Express app (exported for tests)
 │   │   ├── index.js      # starts the server
 │   │   ├── db.js         # PostgreSQL connection pool
+│   │   ├── cleanup.js    # deletes expired posts
 │   │   ├── geocode.js    # Nominatim client
 │   │   └── routes/       # communities, posts, geocode
 │   └── test/             # Vitest + Supertest API tests
@@ -67,7 +70,10 @@ Create a database called `fade`, then run the migrations in `fade-backend/db/mig
 ```bash
 psql -U postgres -d fade -f fade-backend/db/migrations/000_create_tables.sql
 psql -U postgres -d fade -f fade-backend/db/migrations/001_add_postgis.sql
+psql -U postgres -d fade -f fade-backend/db/migrations/002_timestamptz.sql
 ```
+
+`002` converts the timestamp columns to `TIMESTAMPTZ`. It reads existing values as `Europe/Berlin` time; if your database already holds rows written in another time zone, check `SHOW timezone;` and change the zone in the file first.
 
 ### 3. Configure the backend
 
@@ -113,7 +119,7 @@ npm test
 | GET | `/communities` | List all communities |
 | POST | `/communities` | Create a community: `name` (required), `description`, `location`, `lat`, `lon` |
 | DELETE | `/communities/:id` | Delete a community |
-| GET | `/communities/:id/posts` | List a community's posts |
+| GET | `/communities/:id/posts` | List a community's posts that haven't expired |
 | POST | `/communities/:id/posts` | Create a post: `title`, `duration_hours` (1 to 168), `description`, `category` |
 | GET | `/posts/:id` | Get one post |
 | DELETE | `/posts/:id` | Delete a post |
@@ -126,7 +132,8 @@ npm test
 - [x] Geocoding endpoint and PostGIS storage
 - [x] Location search and picker in the Create Community form
 - [ ] "Nearby" search and distance sorting with PostGIS
-- [ ] Creating Sparks from the board page
+- [x] Creating Sparks from the board page
+- [x] Expired Sparks are filtered out and deleted, and fade out of the board
 - [ ] User accounts, and only owners can delete their boards
 - [ ] Image uploads for communities
 
