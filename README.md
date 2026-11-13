@@ -177,9 +177,11 @@ The full list is in [fade-frontend/TODO.md](fade-frontend/TODO.md).
 
 ## What I learned
 
-<!-- TODO (in your own words): 3 to 5 bullets. Ideas: TIMESTAMP vs TIMESTAMPTZ,
-working within a third-party API's usage policy, testing Express routes with a mocked
-database, PostGIS basics, building animations that respect reduced motion. -->
+- **Working with a third-party API I don't control.** Nominatim has a strict usage policy, so I had to design around its limits with a request queue, caching and rate limiting instead of calling it freely.
+- **PostGIS migrations and functions.** I enabled PostGIS through a SQL migration and stored each board's location as a `geography(Point, 4326)`, which sets up distance queries for the planned "Nearby" feature.
+- **Storing time correctly.** I first stored timestamps as plain `TIMESTAMP`, which saves a wall-clock time with no time zone, so expiry checks depended on the database's settings. I wrote a migration to switch to `TIMESTAMPTZ`, which stores an exact moment, so "expires in 1 hour" means the same thing everywhere.
+- **Enforcing a rule in more than one layer.** Hiding expired posts in the frontend wasn't enough. The API filters them out in the SQL query so they're never returned, and a cleanup job deletes them so the table doesn't keep growing.
+- **Using Claude skills for frontend design.** I used Claude Code's design skills to guide the visual redesign of the frontend.
 
 ## Credits
 
