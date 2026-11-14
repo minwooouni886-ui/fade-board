@@ -3,20 +3,20 @@ import Icon from './Icon'
 import Logo from './Logo'
 
 const navItems = [
-  { path: '/', label: 'Explore Communities', icon: 'explore', end: true },
+  { path: '/', label: 'Explore boards', icon: 'explore', end: true },
 ]
 
-/** Translucent top bar: content scrolls underneath it. */
+/** Top bar: a white strip with an ink rule under it. */
 export default function Sidebar() {
   return (
-    <header className="material-bar sticky top-0 z-50 border-b border-black/[0.1]">
+    <header className="sticky top-0 z-50 border-b-2 border-ink bg-paper">
       <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-margin sm:px-8">
         <Link
           to="/"
           aria-label="fade — home"
           className="rounded-lg transition-transform active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <Logo className="h-8 w-auto text-on-surface" />
+          <Logo className="text-[24px]" />
         </Link>
 
         <nav className="flex items-center gap-space-xs">
@@ -29,8 +29,8 @@ export default function Sidebar() {
                 [
                   'flex items-center gap-space-xs rounded-full px-space-md py-1.5 font-body-md text-body-md transition-[background-color,color,transform] duration-100 active:scale-[0.97]',
                   isActive
-                    ? 'bg-black/[0.07] text-on-surface font-medium'
-                    : 'text-on-surface-variant hover:bg-black/[0.04] hover:text-on-surface',
+                    ? 'bg-surface-container-high text-on-surface font-medium'
+                    : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface',
                 ].join(' ')
               }
             >

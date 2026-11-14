@@ -3,11 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 <!-- Add the CI badge here once the GitHub Actions workflow exists. -->
 
-Local community boards where nothing lasts. People create a board for their neighborhood, and every post on it (a "Spark") fades away within 7 days.
+Local community boards where nothing lasts. People create a board for their neighborhood, and every note pinned to it comes down within 7 days.
 
 <!-- Live demo: add the URL here once it's deployed. -->
 
-<!-- Screenshot or GIF of a board with Sparks fading out goes here. -->
+<!-- Screenshot or GIF of a board with notes coming down goes here. -->
 
 ## Table of contents
 
@@ -30,16 +30,17 @@ Local community boards where nothing lasts. People create a board for their neig
 <!-- TODO (in your own words): why you built this. What bugged you about existing
 neighborhood boards or group chats? Why should posts expire? Two or three sentences. -->
 
-fade-board is a full-stack app built around one rule: posts don't stay. Every Spark gets a lifetime between 1 hour and 7 days, counts down live on the board, and is gone once it runs out, both from the screen and from the database. Boards are tied to a real place, picked through an OpenStreetMap address search and stored as geographic coordinates, so the app can later show what's happening near you.
+fade-board is a full-stack app built around one rule: posts don't stay. Every note gets a lifetime between 1 hour and 7 days, counts down live on the board, and is gone once it runs out, both from the screen and from the database. Boards are tied to a real place, picked through an OpenStreetMap address search and stored as geographic coordinates, so the app can later show what's happening near you.
 
 ## Features
 
-- **Community boards**: browse all boards (newest first) and create one from a modal, with backend validation errors shown in the form.
+- **Community boards**: browse all boards (newest first), each with a cover photo, its live note count and when the last note was pinned. Create one from a modal, with backend validation errors shown in the form. Board names are capped at 40 characters.
+- **Board page**: a full-width header with the board's photo as its background (shaded so the text stays readable), then its notes in a timeline grouped by when they come down (coming down soon, later today, tomorrow, later this week), with small group labels that stay in view while scrolling, and a sidebar summing up the board with a map of its spot.
 - **Location picker**: search for an address, choose from up to 5 results, and the board stores its coordinates plus a short label such as "Jan de Oudeweg, Delft". Keyboard friendly, with loading, empty and error states.
-- **Sparks**: post a Spark with a title, details, a category and a lifetime of 1 hour, 24 hours, 3 days or 7 days.
-- **Live countdown**: each Spark shows a ticking timer and a decay bar. Under 5 minutes the timer turns red and shows seconds.
-- **Fade-out**: when time runs out a Spark reads "Faded", dissolves, and the cards below glide up. Users who prefer reduced motion get a plain cross-fade.
-- **Real expiry on the server**: the API never returns expired Sparks, and a cleanup job deletes them.
+- **Notes**: pin a note with a title, details, a category and a lifetime of 1 hour, 24 hours, 3 days or 7 days.
+- **Live countdown**: each note shows a ticking timer and a bar that shrinks as time runs out. Under 5 minutes the timer turns red and shows seconds.
+- **Fade-out**: when time runs out a note reads "Faded", dissolves, and the cards below glide up. Users who prefer reduced motion get a plain cross-fade.
+- **Real expiry on the server**: the API never returns expired notes, and a cleanup job deletes them.
 
 ## Tech stack
 
@@ -53,7 +54,7 @@ fade-board is a full-stack app built around one rule: posts don't stay. Every Sp
 
 ## Design decisions and challenges
 
-- **Expiry is enforced twice.** `GET /communities/:id/posts` filters with `expires_at > NOW()`, so an expired Spark is never returned even for a moment. Separately, a cleanup job deletes expired rows on startup and every 10 minutes so the table doesn't grow forever. The filter keeps the data correct, and the job keeps it small.
+- **Expiry is enforced twice.** `GET /communities/:id/posts` filters with `expires_at > NOW()`, so an expired note is never returned even for a moment. Separately, a cleanup job deletes expired rows on startup and every 10 minutes so the table doesn't grow forever. The filter keeps the data correct, and the job keeps it small.
 - **Time zones.** Timestamps were first stored as plain `TIMESTAMP`, which saves a wall-clock time with no zone, so expiry math depended on the database's time zone setting. Migration `002` switches them to `TIMESTAMPTZ`, which stores an exact moment.
 - **Playing by Nominatim's rules.** The public Nominatim server forbids search-as-you-type and allows at most 1 request per second. So the frontend only searches on Enter or the search button, and the backend queues requests at 1 per second (rejecting with `429` if the wait would be too long), caches results for an hour, limits each client to 20 searches a minute, and sends an identifying User-Agent.
 - **Coordinates as PostGIS geography.** Boards store a `geography(Point, 4326)` instead of two number columns, which sets up the planned "Nearby" feature without changing the schema.
@@ -112,12 +113,12 @@ This starts the backend on http://localhost:3000 and the frontend on http://loca
 
 ## How to use
 
-1. Open http://localhost:5173 and click **New Community**.
+1. Open http://localhost:5173 and click **New board**.
 2. Give the board a name, type an address in the location field, press Enter, and pick a result.
-3. Open the board and click **New Spark**. Fill in a title and details, pick a category, and choose how long it lasts.
-4. Watch the countdown. Pick 1 hour to see a Spark fade out without waiting days.
+3. Open the board and click **Pin a note**. Fill in a title and details, pick a category, and choose how long it lasts.
+4. Watch the countdown. Pick 1 hour to see a note come down without waiting days.
 
-<!-- Screenshots of the create-board modal and the Spark composer go here. -->
+<!-- Screenshots of the create-board modal and the note composer go here. -->
 
 ## Running tests
 
@@ -132,7 +133,7 @@ npm test
 
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/communities` | List all communities |
+| GET | `/communities` | List all communities, each with `lat`/`lon` (read from its PostGIS point), plus `note_count` and `last_note_at`, both counting unexpired notes only |
 | POST | `/communities` | Create a community: `name` (required), `description`, `location`, `lat`, `lon` |
 | DELETE | `/communities/:id` | Delete a community |
 | GET | `/communities/:id/posts` | List a community's posts that haven't expired |
@@ -170,8 +171,8 @@ fade-board/
 - [ ] CI on GitHub Actions (lint, typecheck, build, tests)
 - [ ] "Nearby" boards using PostGIS distance queries and browser geolocation
 - [ ] Map view of nearby boards
-- [ ] Live updates, so new Sparks appear without a reload
-- [ ] User accounts, so only owners can delete their boards and Sparks
+- [ ] Live updates, so new notes appear without a reload
+- [ ] User accounts, so only owners can delete their boards and notes
 
 The full list is in [fade-frontend/TODO.md](fade-frontend/TODO.md).
 
@@ -187,7 +188,9 @@ The full list is in [fade-frontend/TODO.md](fade-frontend/TODO.md).
 
 Built by [Minwoo Lee](https://github.com/minwooouni886-ui).
 
-Geocoding by [Nominatim](https://nominatim.org/). Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright).
+Geocoding by [Nominatim](https://nominatim.org/). Map data and map tiles © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright).
+
+Default board photos in `fade-frontend/public/covers/` are from [Unsplash](https://unsplash.com) and used under the [Unsplash License](https://unsplash.com/license): [1](https://unsplash.com/photos/vfvze3q9rsI), [2](https://unsplash.com/photos/Y_4fVT2Do8w), [3](https://unsplash.com/photos/aIrInM9uXFc), [4](https://unsplash.com/photos/lQGecrzPFTg), [5](https://unsplash.com/photos/DPVxZH2EjoE), [6](https://unsplash.com/photos/jf-ZBxT84IM), [7](https://unsplash.com/photos/UAVXHBmVDOQ), [8](https://unsplash.com/photos/5gXPybgcM5M).
 
 ## License
 

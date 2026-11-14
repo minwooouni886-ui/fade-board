@@ -8,7 +8,7 @@ follow in any order.
 
 ## Done
 
-- **Browse communities and board pages**, with Sparks that show a countdown and hide
+- **Browse communities and board pages**, with notes that show a countdown and hide
   once expired.
 - **Create communities** from a modal, with backend validation errors shown in the form.
 - **Geocoding endpoint and PostGIS storage.** `GET /geocode` returns up to 5 matches,
@@ -20,8 +20,15 @@ follow in any order.
   the wait is too long), a one-hour cache, a per-IP rate limit on `/geocode`, and a
   required `NOMINATIM_USER_AGENT`.
 - **Backend API tests** with Vitest and Supertest (database mocked).
-- **Apple-style light theme** and the redesigned modal.
-- **Create Sparks from the board page.** A New Spark button opens a composer (title,
+- **Zine collage design.** Cut-out paper notes with thick ink outlines and hard shadows on a
+  lavender page, sticker labels for categories, board names on black tape, and Hanken Grotesk
+  type. A bar on each note shrinks as its time runs out. Boards on the
+  home page show a cover photo, a live note count and when the last note was
+  pinned. A board page opens with a full-width header over its photo, then lists its notes
+  in a timeline grouped by when they come down, with a sidebar summing up the board and a map
+  of its spot. Maps are OpenStreetMap tiles; before real traffic, move to a tile provider
+  (MapTiler or similar), since the public OSM tile server is not meant for heavy use.
+- **Pin notes from the board page.** A Pin a note button opens a composer (title,
   details, category, and a fade time of 1 hour to 7 days). The panel grows out of the
   button, backend errors show in the form, and the feed refreshes after posting.
 - **Expiry on the server.** `GET /communities/:id/posts` filters with `expires_at > NOW()`,
@@ -29,13 +36,13 @@ follow in any order.
   now `TIMESTAMPTZ` (migration `002`).
 - **Live countdown and fade animation.** Labels tick every second and change format as
   time runs down (`Xd Yh`, `Xh Ym`, `Xm`, then `Xm Ys` in red under 5 minutes). An expired
-  Spark reads "Faded" for a moment, dissolves, and the cards below glide up. Reduced
+  note reads "Faded" for a moment, dissolves, and the cards below glide up. Reduced
   motion gets a plain cross-fade.
 
 ## Tier 1: Core features and a live site
 
 1. **Seed data.** A script that inserts a handful of boards with locations and a few
-   Sparks with different expiry times, so a fresh install, the live site and any
+   notes with different expiry times, so a fresh install, the live site and any
    screenshots are not empty.
 2. **Deploy.** Frontend on Vercel or Netlify, backend and Postgres with PostGIS
    on Render, Fly.io, or Railway. Run the migrations on the host, and put the live URL
@@ -56,8 +63,8 @@ follow in any order.
    back the "Nearest" sort in `Home.tsx` (commented out right now).
 5. **Map view.** Show nearby boards on a Leaflet or MapLibre map with OpenStreetMap
    tiles (with the OpenStreetMap attribution). Take a screenshot of it for the README.
-6. **Live updates.** Push new Sparks to open boards with Server-Sent Events or
-   WebSockets, so a Spark posted by someone else appears without a reload. (The "time left"
+6. **Live updates.** Push new notes to open boards with Server-Sent Events or
+   WebSockets, so a note pinned by someone else appears without a reload. (The "time left"
    labels already tick.)
 7. **Real type-ahead for locations.** The picker searches on Enter because the public
    Nominatim server forbids autocomplete. Switch to a geocoder built for it (Photon,
@@ -73,7 +80,7 @@ follow in any order.
     `buildLabel`), the expiry filter on `GET /communities/:id/posts`, and
     `deleteExpiredPosts`. Frontend tests with Vitest and React Testing Library for the card,
     modal and location picker logic (validation, error display, the time-left labels), plus
-    one Playwright test of the create-board and post-a-Spark flow.
+    one Playwright test of the create-board and pin-a-note flow.
 10. **Input validation and hardening.** Schema validation on request bodies (zod),
     rate limiting on the write endpoints, and proper 404 and error handling on every
     route, with one consistent error format.
@@ -87,7 +94,7 @@ follow in any order.
 ## Tier 4: Accounts and polish
 
 14. **User accounts.** Sign-up and login (JWT or sessions), post authorship shown on
-    Spark cards, and only owners can delete their boards and Sparks. Do this after
+    note cards, and only owners can delete their boards and notes. Do this after
     the tiers above, since it touches every route.
 15. **Dark mode.** Move the color tokens in `tailwind.config.js` to CSS variables
     with a light and a dark set, follow `prefers-color-scheme`, and add a toggle.

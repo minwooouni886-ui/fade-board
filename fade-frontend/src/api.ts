@@ -3,6 +3,11 @@ export type ApiCommunity = {
   name: string
   description: string | null
   location: string | null
+  lat: number | null // null when the board was made without picking a place
+  lon: number | null
+  // From GET /communities, counting unexpired notes only
+  note_count: number
+  last_note_at: string | null // when the newest note was pinned
 }
 
 export type ApiPost = {
@@ -11,6 +16,7 @@ export type ApiPost = {
   title: string
   description: string | null
   category: string | null
+  created_at: string
   expires_at: string
 }
 
