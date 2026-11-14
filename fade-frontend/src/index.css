@@ -24,23 +24,150 @@
   display: none;
 }
 
-/* Translucent top bar: content scrolls underneath */
-.material-bar {
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.04);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  backdrop-filter: blur(20px) saturate(180%);
+/* Cut-out paper: a thick ink outline and a hard ink shadow, like a zine paste-up */
+.cutout {
+  border: 2px solid #1f1a3a;
+  box-shadow: 4px 4px 0 #1f1a3a;
 }
-@media (prefers-reduced-transparency: reduce) {
-  .material-bar {
-    background: #ffffff;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
+
+/* A note stuck on the page at a slight angle. --tilt is set per note from its id */
+.notice {
+  transform: rotate(var(--tilt, 0deg));
+}
+@media (max-width: 640px) {
+  .notice {
+    transform: rotate(calc(var(--tilt, 0deg) / 2));
   }
 }
+
+/* Board card on the home page. Hovering or tabbing to it eases it forward a little. A smooth
+   ease-out with no overshoot: a springy bounce made the cards twitch when the mouse swept
+   quickly across several of them. */
+.board-card {
+  transform: rotate(var(--tilt, 0deg));
+  transition:
+    transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.group:hover .board-card,
+.group:focus-within .board-card {
+  transform: scale(1.03);
+  box-shadow: 6px 6px 0 #1f1a3a;
+}
+
+/* The card's slot stays on top until its card has finished shrinking back, so a card that's
+   being left doesn't drop behind its neighbours mid-animation and flicker */
+.board-slot {
+  z-index: 0; /* a number, not auto, so the change back can be delayed */
+  transition: z-index 0s linear 240ms;
+}
+.board-slot:hover,
+.board-slot:focus-within {
+  z-index: 20;
+  transition-delay: 0s;
+}
+
+/* The description: closed until its card is hovered or focused, then its height opens and it
+   fades in together, smoothly. Opening waits a moment, so sweeping the mouse across the grid
+   doesn't open every card it passes; closing starts right away. */
+.reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 200ms ease-out;
+}
+.reveal > * {
+  min-height: 0;
+  overflow: hidden;
+}
+.group:hover .reveal,
+.group:focus-within .reveal {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition-delay: 150ms;
+}
+
+/* A strip of black tape with a name on it: board names and page headings.
+   Inline with a cloned background, so a name that wraps gets one strip per line instead of
+   one big black block, and very long words break instead of running out of the card. */
+.tape {
+  display: inline;
+  background: #1f1a3a;
+  color: #ffffff;
+  padding: 0.12em 0.45em;
+  /* Each line's strip is about 1.55em tall (text plus padding). A 1.67em line height leaves a
+     small but clear ~0.12em gap, so a wrapped name reads as separate pieces of tape. (At 1.55em
+     the strips only just touched and left a hairline seam that looked like a rendering glitch.) */
+  line-height: 1.67;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+/* White tape, for names sitting on a dark photo */
+.tape-light {
+  background: #ffffff;
+  color: #1f1a3a;
+}
+
+/* The heading holding the tape is what tilts, since inline tape can't rotate on its own */
+.taped {
+  transform: rotate(-1.5deg);
+  transform-origin: left center;
+}
+
+/* Sticker label stuck on a note's top edge (categories, note counts) */
+.sticker {
+  position: absolute;
+  z-index: 1; /* above a card's map */
+  top: -12px;
+  right: 12px;
+  max-width: 70%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 9999px;
+  padding: 2px 10px;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 800;
+  transform: rotate(var(--sticker-tilt, 3deg));
+}
+
+/* Chunky buttons that press down into their shadow */
+.press {
+  border: 2px solid #1f1a3a;
+  box-shadow: 3px 3px 0 #1f1a3a;
+  transition:
+    transform 80ms ease-out,
+    box-shadow 80ms ease-out;
+}
+.press:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #1f1a3a;
+}
+
+/* The time-left bar on each note shrinks smoothly between the one-second ticks */
+.time-bar {
+  transition: width 1s linear;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition-duration: 0.01ms !important;
+  }
+  .notice,
+  .press:active,
+  .board-card,
+  .group:hover .board-card,
+  .group:focus-within .board-card {
+    transform: none;
+  }
+  .group:hover .reveal,
+  .group:focus-within .reveal {
+    transition-delay: 0s;
   }
 }
 
@@ -54,62 +181,3 @@
   line-height: 1;
   user-select: none;
 }
-
-/* fade logo — ambient staggered decay of the bars */
-.fade-logo .flb-1 {
-  animation: fade-logo-b1 4.6s ease-in-out infinite;
-}
-.fade-logo .flb-2 {
-  animation: fade-logo-b2 4.6s ease-in-out 0.5s infinite;
-}
-.fade-logo .flb-3 {
-  animation: fade-logo-b3 4.6s ease-in-out 1s infinite;
-}
-.fade-logo .fld {
-  animation: fade-logo-dot 4.6s ease-in-out 1.4s infinite;
-}
-@keyframes fade-logo-b1 {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  55% {
-    opacity: 0.5;
-  }
-}
-@keyframes fade-logo-b2 {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  55% {
-    opacity: 0.38;
-  }
-}
-@keyframes fade-logo-b3 {
-  0%,
-  100% {
-    opacity: 0.35;
-  }
-  55% {
-    opacity: 0.12;
-  }
-}
-@keyframes fade-logo-dot {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  55% {
-    opacity: 0.25;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .fade-logo .flb-1,
-  .fade-logo .flb-2,
-  .fade-logo .flb-3,
-  .fade-logo .fld {
-    animation: none;
-  }
-}
-

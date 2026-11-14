@@ -4,10 +4,10 @@ import { motion, useAnimationControls, useReducedMotion } from 'motion/react'
 import { createPost } from '../api'
 
 const inputClass =
-  'w-full bg-surface-container rounded-2xl px-space-md py-space-sm text-on-surface font-body-lg text-body-lg placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary-container'
+  'w-full bg-surface-container rounded-lg px-space-md py-space-sm text-on-surface font-body-lg text-body-lg placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary'
 const labelClass = 'font-body-sm text-body-sm text-on-surface-variant'
 
-// Every Spark fades; the backend accepts 1 to 168 hours
+// Every note comes down; the backend accepts 1 to 168 hours
 const durations = [
   { label: '1 hour', hours: 1 },
   { label: '24 hours', hours: 24 },
@@ -23,7 +23,7 @@ type Props = {
   onCreated: () => void
 }
 
-export default function CreateSparkModal({ communityId, originRef, onClose, onCreated }: Props) {
+export default function CreateNoteModal({ communityId, originRef, onClose, onCreated }: Props) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('')
@@ -87,7 +87,7 @@ export default function CreateSparkModal({ communityId, originRef, onClose, onCr
   async function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault()
     if (title.trim().length === 0) {
-      setError('Give your Spark a title.')
+      setError('Give your note a title.')
       return
     }
 
@@ -110,7 +110,7 @@ export default function CreateSparkModal({ communityId, originRef, onClose, onCr
     <motion.div
       initial={{ opacity: 0 }}
       animate={scrim}
-      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/30 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-ink/50 sm:items-center sm:p-4"
       // Only a press that started on the overlay may close it, so dragging out of the panel doesn't
       onPointerDown={(e) => {
         pressedOnScrim.current = e.target === e.currentTarget
@@ -123,19 +123,19 @@ export default function CreateSparkModal({ communityId, originRef, onClose, onCr
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="create-spark-title"
+        aria-labelledby="create-note-title"
         initial={reduceMotion ? { opacity: 0 } : { scale: 0.9, opacity: 0 }}
         animate={panel}
-        className="w-full max-w-lg rounded-t-[24px] rounded-b-none bg-surface-container-low p-space-xl shadow-[0_24px_64px_rgba(0,0,0,0.18)] ring-1 ring-black/[0.06] sm:rounded-[24px]"
+        className="w-full max-w-lg rounded-t-lg rounded-b-none bg-paper text-ink p-space-xl cutout sm:rounded-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-space-md mb-space-lg">
           <div>
-            <h2 id="create-spark-title" className="font-headline-md text-headline-md text-on-surface">
-              New Spark
+            <h2 id="create-note-title" className="font-headline-md text-headline-md text-on-surface">
+              Pin a note
             </h2>
             <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-              Share something with your neighbors. It fades when the time runs out.
+              Share something with your neighbors. It comes down when its time runs out.
             </p>
           </div>
           <button
@@ -186,7 +186,7 @@ export default function CreateSparkModal({ communityId, originRef, onClose, onCr
           </label>
 
           <fieldset className="flex flex-col gap-space-xs">
-            <legend className={`${labelClass} mb-space-xs`}>Fades after</legend>
+            <legend className={`${labelClass} mb-space-xs`}>Comes down after</legend>
             <div className="flex flex-wrap gap-space-sm">
               {durations.map((d) => {
                 const active = d.hours === hours
@@ -227,10 +227,10 @@ export default function CreateSparkModal({ communityId, originRef, onClose, onCr
             <button
               type="submit"
               disabled={submitting}
-              className="flex items-center gap-space-xs px-space-lg py-2 rounded-full font-body-md text-body-md font-medium bg-primary-container text-on-primary-container transition-[filter,transform] duration-100 hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="press flex items-center gap-space-xs px-space-lg py-2 rounded-full font-body-md text-body-md font-bold bg-primary-container text-on-primary-container disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Icon name="bolt" className="text-base" />
-              Post Spark
+              <Icon name="push_pin" className="text-base" />
+              Pin note
             </button>
           </div>
         </form>

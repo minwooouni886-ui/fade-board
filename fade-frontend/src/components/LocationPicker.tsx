@@ -18,7 +18,7 @@ type Props = {
 }
 
 const inputClass =
-  'w-full bg-surface-container rounded-2xl pl-space-md pr-12 py-space-sm text-on-surface font-body-lg text-body-lg placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary-container'
+  'w-full bg-surface-container rounded-lg pl-space-md pr-12 py-space-sm text-on-surface font-body-lg text-body-lg placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary'
 
 // Nominatim names are one long comma list: "Mekelweg, Delft, Zuid-Holland, Nederland"
 function splitName(name: string): [string, string] {
@@ -140,7 +140,7 @@ export default function LocationPicker({ value, onChange, suggestions, searching
             style={{ transformOrigin: 'top' }}
             // Keep focus in the input while the pointer is on the list
             onMouseDown={(e) => e.preventDefault()}
-            className="absolute left-0 right-0 top-full z-10 mt-space-xs overflow-hidden rounded-2xl bg-white/85 shadow-[0_12px_32px_rgba(0,0,0,0.12)] ring-1 ring-black/[0.06] backdrop-blur-xl backdrop-saturate-150 [@media(prefers-reduced-transparency:reduce)]:bg-white [@media(prefers-reduced-transparency:reduce)]:backdrop-blur-none"
+            className="absolute left-0 right-0 top-full z-10 mt-space-xs overflow-hidden rounded-lg bg-paper cutout"
           >
             <ul id={listId} role="listbox" className="max-h-[40vh] overflow-y-auto p-1">
               {suggestions.map((place, i) => {

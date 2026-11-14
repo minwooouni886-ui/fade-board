@@ -5,8 +5,11 @@ import { motion, useAnimationControls, useReducedMotion } from 'motion/react'
 import { ApiError, createCommunity, searchLocations, type GeocodeResult } from '../api'
 
 const inputClass =
-  'w-full bg-surface-container rounded-2xl px-space-md py-space-sm text-on-surface font-body-lg text-body-lg placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary-container'
+  'w-full bg-surface-container rounded-lg px-space-md py-space-sm text-on-surface font-body-lg text-body-lg placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary'
 const labelClass = 'font-body-sm text-body-sm text-on-surface-variant'
+// Board names longer than this don't fit the cards on the home page.
+// Keep in sync with MAX_NAME_LENGTH in fade-backend/src/routes/communitiesRoutes.js
+const MAX_NAME_LENGTH = 40
 
 export default function CreateCommunityModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [name, setName] = useState('')
@@ -130,7 +133,7 @@ export default function CreateCommunityModal({ onClose, onCreated }: { onClose: 
     <motion.div
       initial={{ opacity: 0 }}
       animate={scrim}
-      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/30 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-ink/50 sm:items-center sm:p-4"
       // Only a press that started on the overlay may close it, so dragging out of the panel doesn't
       onPointerDown={(e) => {
         pressedOnScrim.current = e.target === e.currentTarget
@@ -147,16 +150,16 @@ export default function CreateCommunityModal({ onClose, onCreated }: { onClose: 
         aria-labelledby="create-community-title"
         initial={reduceMotion ? { opacity: 0 } : { y: 24, scale: 0.96, opacity: 0 }}
         animate={panel}
-        className="w-full max-w-lg rounded-t-[24px] rounded-b-none bg-surface-container-low p-space-xl shadow-[0_24px_64px_rgba(0,0,0,0.18)] ring-1 ring-black/[0.06] sm:rounded-[24px]"
+        className="w-full max-w-lg rounded-t-lg rounded-b-none bg-paper text-ink p-space-xl cutout sm:rounded-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-space-md mb-space-lg">
           <div>
             <h2 id="create-community-title" className="font-headline-md text-headline-md text-on-surface">
-              New Community
+              New board
             </h2>
             <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-              Start a board for your neighborhood. Every Spark posted in it fades within 7 days.
+              Start a board for your neighborhood. Every note pinned to it comes down within 7 days.
             </p>
           </div>
           <button
@@ -172,11 +175,17 @@ export default function CreateCommunityModal({ onClose, onCreated }: { onClose: 
         {/* onSubmit handler, prevent default */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-space-lg">
           <label className="flex flex-col gap-space-xs">
-            <span className={labelClass}>
-              Name <span className="text-primary">*</span>
+            <span className={`${labelClass} flex justify-between`}>
+              <span>
+                Name <span className="text-primary">*</span>
+              </span>
+              {/* Live count so people see the limit before they hit it */}
+              <span className={`tabular-nums ${name.length >= MAX_NAME_LENGTH ? 'font-bold text-ink' : ''}`}>
+                {name.length}/{MAX_NAME_LENGTH}
+              </span>
             </span>
-            {/* name input */}
-            <input value={name} type="text" autoFocus className={inputClass} onChange={(e) => {
+            {/* name input; maxLength stops typing or pasting past the limit */}
+            <input value={name} type="text" autoFocus maxLength={MAX_NAME_LENGTH} className={inputClass} onChange={(e) => {
               setName(e.target.value)
             }} placeholder="e.g. TU Delft Makerspace Crew" />
           </label>
@@ -241,10 +250,10 @@ export default function CreateCommunityModal({ onClose, onCreated }: { onClose: 
             <button
               type="submit"
               disabled={submitting}
-              className="flex items-center gap-space-xs px-space-lg py-2 rounded-full font-body-md text-body-md font-medium bg-primary-container text-on-primary-container transition-[filter,transform] duration-100 hover:brightness-110 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="press flex items-center gap-space-xs px-space-lg py-2 rounded-full font-body-md text-body-md font-bold bg-primary-container text-on-primary-container disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Icon name="add" className="text-base" />
-              Create Community
+              Create board
             </button>
           </div>
         </form>

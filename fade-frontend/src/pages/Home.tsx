@@ -31,23 +31,22 @@ export default function Home() {
 
   return (
     <div className="flex flex-col w-full pb-16">
-      <title>Fade · Explore Communities</title>
+      <title>Fade · Explore boards</title>
       {/* Headline */}
-      <div className="pt-12 pb-8 flex flex-col max-w-xl">
-        <p className="font-body-sm text-body-sm text-primary mb-space-sm">7-day ephemeral</p>
-        <h1 className="font-display-lg-mobile sm:font-display-lg text-display-lg-mobile sm:text-display-lg text-on-surface">
-          Nearby Communities &amp; Boards
+      <div className="pt-14 pb-10 flex flex-col max-w-xl">
+        <h1 className="taped font-display-lg-mobile sm:font-display-lg text-display-lg-mobile sm:text-display-lg font-black leading-[1.45] sm:leading-[1.45]">
+          <span className="tape">Neighborhood boards</span>
         </h1>
-        <p className="font-body-lg text-body-lg text-on-surface-variant mt-3">
-          Every Spark fades after 7 days. Connect with high-tempo neighborhood pulses
-          before they&apos;re gone.
+        <p className="font-body-lg text-body-lg text-on-surface-variant mt-5">
+          Pin up what&apos;s happening around you. Every note comes down on its own,
+          within a week.
         </p>
       </div>
 
-      {/* Sort controls + New Community button */}
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-space-md">
-        <div className="flex items-center gap-1 bg-surface-container-low rounded-full p-1">
-          <span className="pl-space-sm pr-1 font-body-sm text-body-sm text-outline hidden sm:inline">
+      {/* Sort controls + New board button */}
+      <div className="mb-10 flex flex-wrap items-center justify-between gap-space-md">
+        <div className="flex items-center gap-1 cutout bg-paper rounded-full p-1">
+          <span className="pl-space-sm pr-1 font-body-sm text-body-sm text-on-surface-variant hidden sm:inline">
             Sort
           </span>
           {sortOptions.map((opt) => {
@@ -60,36 +59,33 @@ export default function Home() {
                 aria-pressed={isActive}
                 className={`flex items-center gap-1.5 px-space-md py-1 rounded-full font-body-sm text-body-sm transition-[background-color,color,transform] duration-100 active:scale-[0.97] ${
                   isActive
-                    ? 'bg-surface-bright text-on-surface font-medium'
-                    : 'text-on-surface-variant hover:text-on-surface'
+                    ? 'bg-sun text-ink font-bold'
+                    : 'text-on-surface-variant hover:text-ink'
                 }`}
               >
-                <Icon
-                  name={opt.icon}
-                  className={`text-sm ${isActive ? 'text-primary' : ''}`}
-                />
+                <Icon name={opt.icon} className="text-sm" />
                 <span>{opt.label}</span>
               </button>
             )
           })}
         </div>
         
-        {/* new community button modal */}
+        {/* New board button and its modal */}
         <button
           type="button"
           onClick={() => setModalView(true)}
-          className="flex items-center gap-space-xs px-space-lg py-2 rounded-full font-body-md text-body-md font-medium bg-primary-container text-on-primary-container transition-[filter,transform] duration-100 hover:brightness-110 active:scale-[0.97]"
+          className="press flex items-center gap-space-xs px-space-lg py-2 rounded-full font-body-md text-body-md font-bold bg-sun text-ink focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-4 focus-visible:outline-ink"
         >
           <Icon name="add" className="text-base" />
-          New Community
+          New board
         </button>
       </div>
       {modalView && <CreateCommunityModal 
         onClose={() => setModalView(false)} 
         onCreated={() => fetchCommunities().then(updated => setCommunities(updated))}
       />}
-      {/* Board grid — fixed-size cards, left-aligned, never full-bleed */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]">
+      {/* Board grid: cut-out cards with room for their tilt and stickers */}
+      <div className="grid items-start gap-x-6 gap-y-12 grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
         {sortedCommunities.map((community) => (
           <CommunityCard key={community.id} community={community} />
         ))}
