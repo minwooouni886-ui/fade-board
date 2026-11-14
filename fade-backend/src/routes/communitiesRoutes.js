@@ -3,9 +3,21 @@ import { Router } from 'express'
 
 const router = Router()
 
+// Keep in sync with MAX_NAME_LENGTH in fade-frontend/src/components/CreateCommunityModal.tsx
+const MAX_NAME_LENGTH = 40
+
 router.get('/communities', async (req, res) => {
     try {
-        const result = await db.query("SELECT * FROM communities")
+        // Extra fields for the board cards: lat and lon read back out of the PostGIS point (for the
+        // maps), plus note_count and last_note_at (when the newest one was pinned), both counting
+        // unexpired notes only
+        const result = await db.query(`
+            SELECT c.*,
+                ST_Y(c.geom::geometry) AS lat,
+                ST_X(c.geom::geometry) AS lon,
+                (SELECT COUNT(*) FROM posts p WHERE p.community_id = c.id AND p.expires_at > NOW())::int AS note_count,
+                (SELECT MAX(p.created_at) FROM posts p WHERE p.community_id = c.id AND p.expires_at > NOW()) AS last_note_at
+            FROM communities c`)
         return res.status(200).json(result.rows)
     } catch (e) {
         console.error(`Error: ${e}`)
@@ -18,6 +30,11 @@ router.post('/communities', async (req,res) => {
 
     if (!name) {
         return res.status(400).json({ error: "Community name must be present"})
+    }
+
+    // Long names don't fit the board cards, so they're capped here as well as in the form
+    if (typeof name !== 'string' || name.trim().length > MAX_NAME_LENGTH) {
+        return res.status(400).json({ error: `Community name must be ${MAX_NAME_LENGTH} characters or fewer`})
     }
 
     // Coordinates are required, but optional for now

@@ -35,3 +35,22 @@ describe('GET /communities', () => {
         expect(res.body).toEqual({ error: "500 Internal Server Error"})
     })
 })
+describe('POST /communities', () => {
+    test('Rejects a name longer than 40 characters without touching the db', async () => {
+        const res = await request(app).post('/communities').send({ name: 'x'.repeat(41) })
+
+        expect(res.status).toBe(400)
+        expect(res.body).toEqual({ error: 'Community name must be 40 characters or fewer' })
+        expect(db.query).not.toHaveBeenCalled()
+    })
+
+    test('Accepts a name of exactly 40 characters', async () => {
+        const created = { id: 1, name: 'x'.repeat(40) }
+        db.query.mockResolvedValueOnce({ rows: [created] })
+
+        const res = await request(app).post('/communities').send({ name: 'x'.repeat(40) })
+
+        expect(res.status).toBe(201)
+        expect(res.body).toEqual(created)
+    })
+})
